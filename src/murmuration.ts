@@ -62,6 +62,11 @@ export const SPECIES: Species[] = [
   },
 ];
 
+// Circumradius of the exact triangle/notched-wing geometry used by SkyRenderer.
+const silhouetteRadii = SPECIES.map((s) =>
+  Math.hypot(s.size, s.size * 0.38 * (s.shape === "fork" ? 1.6 : 1)),
+);
+
 /** The original 2D model, in screen pixels, with reusable neighbor buffers and simultaneous integration. */
 export class Murmuration {
   readonly step: (fraction?: number) => number;
@@ -113,7 +118,7 @@ export class Murmuration {
         s = P.spd * SPECIES[sp]!.speed;
       const cx = W * (0.3 + sp * 0.2),
         cy = H * (0.3 + sp * 0.08);
-      return new Starling({
+      const bird = new Starling({
         sp,
         x: cx + (random() - 0.5) * W * 0.35,
         y: cy + (random() - 0.5) * H * 0.25,
@@ -122,6 +127,8 @@ export class Murmuration {
         ax: 0,
         ay: 0,
       });
+      bird.contain(W, H, silhouetteRadii[sp]!);
+      return bird;
     }
     function syncCounts() {
       const bySp: Starling[][] = [[], [], []];
@@ -305,10 +312,7 @@ export class Murmuration {
         }
         b.x += b.vx * fraction;
         b.y += b.vy * fraction;
-        if (b.x < -20) b.x = W + 20;
-        else if (b.x > W + 20) b.x = -20;
-        if (b.y < -20) b.y = -19;
-        else if (b.y > H + 20) b.y = H + 19;
+        b.contain(W, H, silhouetteRadii[b.sp]!);
         sumS += s;
       }
       if (scare) {
@@ -358,6 +362,7 @@ export class Murmuration {
         throw new RangeError("Invalid viewport");
       W = width;
       H = height;
+      for (const bird of birds) bird.contain(W, H, silhouetteRadii[bird.sp]!);
     };
     this.configure = (patch) => {
       const next = { ...P, ...patch };

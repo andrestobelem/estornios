@@ -11,7 +11,7 @@ bun run view
 
 Abrir `http://127.0.0.1:3000/`. Otro puerto: `PORT=3001 bun run view`.
 
-El inicio usa **450 estorninos, sin otras especies ni obstáculos**.
+El inicio usa **450 estorninos, sin otras especies ni obstáculos**. Los bordes del canvas contienen a las aves: giran al acercarse y, si alcanzan el límite, su velocidad se refleja hacia dentro. El contorno de la silueta también queda dentro del área; al reducir la ventana, la posición se ajusta inmediatamente.
 
 ## Controles
 
@@ -29,7 +29,7 @@ El inicio usa **450 estorninos, sin otras especies ni obstáculos**.
 - `viewer/main.ts`: controles y reloj de animación con dibujo en cada callback del navegador y 120 medios pasos físicos por segundo. Desvincula la velocidad del vuelo de la frecuencia de refresco de pantalla.
 - `scripts/viewer.ts`: empaquetado con Bun y servidor local.
 
-El modelo anterior en 3D fue reemplazado por el modelo 2D de la referencia. Las posiciones se expresan en píxeles y las velocidades en píxeles por paso físico. Las diferencias deliberadas con el HTML original son la eliminación de obstáculos, la pausa corregida, soporte de movimiento reducido, tiempo físico fijo a 120 medios pasos por segundo, validación de entradas y snapshots separados del acceso de renderizado.
+El modelo anterior en 3D fue reemplazado por el modelo 2D de la referencia. Las posiciones se expresan en píxeles y las velocidades en píxeles por paso físico. Las diferencias deliberadas con el HTML original son los bordes cerrados del canvas, la eliminación de obstáculos, la pausa corregida, soporte de movimiento reducido, tiempo físico fijo a 120 medios pasos por segundo, validación de entradas y snapshots separados del acceso de renderizado.
 
 `view()` ofrece acceso de solo lectura en TypeScript a los datos vivos para dibujo inmediato; no debe modificarse ni retenerse como snapshot. `snapshot()` devuelve copias para otros consumidores. Se conserva el diseño original, incluidas las fuentes de Google Fonts con alternativas locales.
 
@@ -56,7 +56,7 @@ bunx tsc --noEmit
 bun run bench
 ```
 
-La prueba de regresión ejecuta las fórmulas del HTML original guardado en `tests/fixtures/original.html` y compara exactamente las trayectorias usando la misma secuencia aleatoria, incluyendo cambios de viento, cohesión, espanto y halcón. El HTML de referencia se usa como fixture de pruebas y nunca se sirve ni se ejecuta en la visualización.
+La prueba de regresión ejecuta las fórmulas del HTML original guardado en `tests/fixtures/original.html` y compara exactamente las trayectorias hasta el primer encuentro con un borde usando la misma secuencia aleatoria, incluyendo cambios de viento, cohesión, espanto y halcón. El HTML de referencia se usa como fixture de pruebas y nunca se sirve ni se ejecuta en la visualización.
 
 El benchmark mide únicamente la física en Bun, sin renderizado: no representa los FPS del navegador. Las especies y el comportamiento son aproximaciones artísticas; no hay garantía de ausencia de colisiones ni modelo aerodinámico.
 

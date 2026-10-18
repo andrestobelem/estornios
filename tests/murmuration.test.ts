@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { runInNewContext } from "node:vm";
-import { Murmuration } from "../src/murmuration.ts";
+import { Murmuration, SPECIES } from "../src/murmuration.ts";
 import { SeededRandom } from "../src/random.ts";
 
 const create = (counts = [8, 3, 1], width = 1280, height = 720) => {
@@ -37,7 +37,7 @@ function originalTrajectory(counts = [8, 3, 1], width = 1280, height = 720) {
       if (frame===20) scare={x:W*.4,y:H*.35,k:1};
       if (frame===30) { state.hawk=true; hawk.x=Math.random()<.5?-10:W+10; hawk.y=H*.2; hawk.vx=0; hawk.vy=0; }
       const speed=step();
-      if ([0, 20, 60, 119].includes(frame)) frames.push(JSON.parse(JSON.stringify({birds,scare,hawk:state.hawk?hawk:null,speed})));
+      frames.push(JSON.parse(JSON.stringify({birds,scare,hawk:state.hawk?hawk:null,speed})));
     }
     return frames;
   })()`,
@@ -45,23 +45,40 @@ function originalTrajectory(counts = [8, 3, 1], width = 1280, height = 720) {
   );
 }
 
-test("matches original trajectories exactly in sparse and dense flocks", () => {
+test("preserves original forces until a canvas boundary is reached", () => {
   for (const [counts, width, height] of [
     [[8, 3, 1], 1280, 720],
     [[60, 15, 5], 640, 480],
   ] as const) {
     const expected = originalTrajectory([...counts], width, height);
     const scene = create([...counts], width, height);
-    const actual = [];
+    let checked = 0;
     for (let frame = 0; frame < 120; frame++) {
       if (frame === 10) scene.configure({ wind: 0.5, coh: 1.2 });
       if (frame === 20) scene.scareAt(width * 0.4, height * 0.35);
       if (frame === 30) scene.setHawk(true);
       const speed = scene.step();
-      if ([0, 20, 60, 119].includes(frame))
-        actual.push({ ...scene.snapshot(), speed });
+      const reference = expected[frame];
+      const reachesBoundary = reference.birds.some(
+        (b: { sp: number; x: number; y: number }) => {
+          const profile = SPECIES[b.sp]!;
+          const radius = Math.hypot(
+            profile.size,
+            profile.size * 0.38 * (profile.shape === "fork" ? 1.6 : 1),
+          );
+          return (
+            b.x < radius ||
+            b.x > width - radius ||
+            b.y < radius ||
+            b.y > height - radius
+          );
+        },
+      );
+      if (reachesBoundary) break;
+      expect({ ...scene.snapshot(), speed }).toEqual(reference);
+      checked++;
     }
-    expect(actual).toEqual(expected);
+    expect(checked).toBeGreaterThan(0);
   }
 });
 
@@ -117,4 +134,45 @@ test("120 half steps preserve flight speed relative to 60 original steps", () =>
   expect(half.view().birds[0]!.vx).toBe(full.view().birds[0]!.vx);
   for (const fraction of [0, -1, 2, NaN])
     expect(() => half.step(fraction)).toThrow();
+});
+
+test("all species stay inside the canvas through wind, scatter, alarm and resize", () => {
+  const scene = create([30, 10, 5], 320, 240);
+  scene.configure({ wind: 1, spd: 7 });
+  scene.setHawk(true);
+  scene.scatter();
+  let width = 320,
+    height = 240;
+  const check = () => {
+    for (const b of scene.view().birds) {
+      const profile = SPECIES[b.sp]!;
+      const radius = Math.hypot(
+        profile.size,
+        profile.size * 0.38 * (profile.shape === "fork" ? 1.6 : 1),
+      );
+      expect(b.x).toBeGreaterThanOrEqual(Math.min(radius, width / 2));
+      expect(b.x).toBeLessThanOrEqual(width - Math.min(radius, width / 2));
+      expect(b.y).toBeGreaterThanOrEqual(Math.min(radius, height / 2));
+      expect(b.y).toBeLessThanOrEqual(height - Math.min(radius, height / 2));
+    }
+  };
+  for (let frame = 0; frame < 600; frame++) {
+    if (frame % 100 === 0) scene.scareAt(width / 2, height / 2);
+    if (frame === 200) {
+      width = 160;
+      height = 120;
+      scene.resize(width, height);
+      check();
+    }
+    scene.step(0.5);
+    check();
+  }
+  width = 1;
+  height = 1;
+  scene.resize(width, height);
+  check();
+  scene.setCount(0, 35);
+  check();
+  scene.step(0.5);
+  check();
 });
