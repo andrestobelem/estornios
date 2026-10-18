@@ -1,10 +1,11 @@
-import type { Bird, SimulationOptions } from './types.ts';
+import type { Bird } from './types.ts';
+import type { ValidatedSimulationOptions } from './configuration.ts';
 import type { Neighbor } from './spatial-grid.ts';
 import { zero, add, mul, sub, axes } from './vector.ts';
 
 /** Separation, alignment, cohesion and boundary steering. */
 export class FlockingBehavior {
-  constructor(private readonly options: SimulationOptions) {}
+  constructor(private readonly options: ValidatedSimulationOptions) {}
   acceleration(bird: Bird, nearby: readonly Neighbor[]) {
     const o = this.options;
       let separation = zero();

@@ -1,6 +1,7 @@
 export type { Bird, Vector3, SimulationOptions } from './types.ts';
 import type { Bird, SimulationOptions } from './types.ts';
-import { SimulationConfiguration } from './configuration.ts';
+import { createSimulationOptions } from './configuration.ts';
+import type { ValidatedSimulationOptions } from './configuration.ts';
 import { SeededRandom } from './random.ts';
 import { SpatialGrid } from './spatial-grid.ts';
 import { FlockingBehavior } from './flocking.ts';
@@ -11,11 +12,11 @@ export type { FlightLimits } from './starling.ts';
 
 /** Coordinates initialization and synchronous flock updates. */
 export class StarlingSimulation {
-  private readonly options: SimulationOptions;
+  private readonly options: ValidatedSimulationOptions;
   private readonly behavior: FlockingBehavior;
   private birds: Starling[];
   constructor(options: Partial<SimulationOptions> = {}) {
-    const o = this.options = new SimulationConfiguration(options).value;
+    const o = this.options = createSimulationOptions(options);
     this.behavior = new FlockingBehavior(o);
     const generator = new SeededRandom(o.seed);
     const random = () => generator.next();
