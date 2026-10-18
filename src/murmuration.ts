@@ -144,15 +144,46 @@ export class Murmuration {
 
     const CELL = VIEW;
     const grid = new Map<number, number[]>();
+    const bucketPool: number[][] = [];
+    const neighborhoods = new Map<number, number[]>();
+    const neighborhoodPool: number[][] = [];
+    let usedNeighborhoods = 0;
     function buildGrid() {
       grid.clear();
+      neighborhoods.clear();
+      usedNeighborhoods = 0;
+      let used = 0;
       for (let i = 0; i < birds.length; i++) {
         const b = birds[i]!;
         const k = ((b.x / CELL) | 0) * 7919 + ((b.y / CELL) | 0);
         let c = grid.get(k);
-        if (!c) grid.set(k, (c = []));
+        if (!c) {
+          c = bucketPool[used] ?? (bucketPool[used] = []);
+          used++;
+          c.length = 0;
+          grid.set(k, c);
+        }
         c.push(i);
       }
+    }
+
+    function candidatesAt(gx: number, gy: number): number[] {
+      const key = gx * 7919 + gy;
+      let candidates = neighborhoods.get(key);
+      if (candidates) return candidates;
+      candidates =
+        neighborhoodPool[usedNeighborhoods] ??
+        (neighborhoodPool[usedNeighborhoods] = []);
+      usedNeighborhoods++;
+      candidates.length = 0;
+      // Preserve the original cell traversal and bird order, including tie resolution.
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dy = -1; dy <= 1; dy++) {
+          const bucket = grid.get((gx + dx) * 7919 + gy + dy);
+          if (bucket) for (const index of bucket) candidates.push(index);
+        }
+      neighborhoods.set(key, candidates);
+      return candidates;
     }
 
     const nIdx = new Int32Array(NEIGH),
@@ -173,41 +204,36 @@ export class Murmuration {
           sy = 0;
         const gx = (b.x / CELL) | 0,
           gy = (b.y / CELL) | 0;
-        for (let dx = -1; dx <= 1; dx++)
-          for (let dy = -1; dy <= 1; dy++) {
-            const c = grid.get((gx + dx) * 7919 + gy + dy);
-            if (!c) continue;
-            for (const j of c) {
-              if (j === i) continue;
-              const o = birds[j]!,
-                ddx = o.x - b.x,
-                ddy = o.y - b.y,
-                d = ddx * ddx + ddy * ddy;
-              if (d > VIEW * VIEW) continue;
-              if (o.sp !== b.sp) {
-                // other species: only keep distance
-                const r = SEP_R * 1.4;
-                if (d < r * r && d > 0) {
-                  const dd = Math.sqrt(d);
-                  sx -= (ddx / dd / dd) * 1.5;
-                  sy -= (ddy / dd / dd) * 1.5;
-                }
-                continue;
-              }
-              if (n < NEIGH) {
-                nIdx[n] = j;
-                nD[n] = d;
-                n++;
-              } else {
-                let w = 0;
-                for (let k = 1; k < NEIGH; k++) if (nD[k]! > nD[w]!) w = k;
-                if (d < nD[w]!) {
-                  nIdx[w] = j;
-                  nD[w] = d;
-                }
-              }
+        for (const j of candidatesAt(gx, gy)) {
+          if (j === i) continue;
+          const o = birds[j]!,
+            ddx = o.x - b.x,
+            ddy = o.y - b.y,
+            d = ddx * ddx + ddy * ddy;
+          if (d > VIEW * VIEW) continue;
+          if (o.sp !== b.sp) {
+            // other species: only keep distance
+            const r = SEP_R * 1.4;
+            if (d < r * r && d > 0) {
+              const dd = Math.sqrt(d);
+              sx -= (ddx / dd / dd) * 1.5;
+              sy -= (ddy / dd / dd) * 1.5;
+            }
+            continue;
+          }
+          if (n < NEIGH) {
+            nIdx[n] = j;
+            nD[n] = d;
+            n++;
+          } else {
+            let w = 0;
+            for (let k = 1; k < NEIGH; k++) if (nD[k]! > nD[w]!) w = k;
+            if (d < nD[w]!) {
+              nIdx[w] = j;
+              nD[w] = d;
             }
           }
+        }
         let axv = 0,
           ayv = 0,
           cx = 0,

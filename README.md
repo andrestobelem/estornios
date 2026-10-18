@@ -57,3 +57,5 @@ bun run bench
 La prueba de regresión ejecuta las fórmulas del HTML original guardado en `tests/fixtures/original.html` y compara exactamente las trayectorias usando la misma secuencia aleatoria, incluyendo cambios de viento, cohesión, espanto y halcón. El HTML de referencia se usa como fixture de pruebas y nunca se sirve ni se ejecuta en la visualización.
 
 El benchmark mide únicamente la física en Bun, sin renderizado: no representa los FPS del navegador. Las especies y el comportamiento son aproximaciones artísticas; no hay garantía de ausencia de colisiones ni modelo aerodinámico.
+
+La búsqueda espacial reutiliza los buffers de celdas y comparte las listas de candidatos entre aves de la misma celda. Conserva el orden de recorrido y selección de vecinos de la referencia. El benchmark incluye la configuración inicial de 300 aves y reporta la mediana de cinco ejecuciones de 600 medios pasos, tras calentamiento.
