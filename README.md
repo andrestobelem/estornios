@@ -54,3 +54,15 @@ No es un modelo aerodinámico ni una validación biológica del vuelo real: no i
 La prueba de regresión compara una trayectoria con datos capturados antes de la refactorización para verificar que la reorganización conserva los resultados.
 
 La API de `Starling` exige un identificador entero seguro no negativo y componentes finitas para posición, velocidad y aceleración. `advance()` valida también los límites de vuelo y lanza `RangeError` ante entradas inválidas, incluso si el tiempo es cero. Estas validaciones se comparten con la configuración de la simulación.
+
+## Visualización interactiva
+
+```bash
+bun run view
+```
+
+Abrir `http://127.0.0.1:3000/`. La visualización usa el mismo motor 3D y dibuja cada ave como una flecha orientada según su velocidad. Permite pausar, reiniciar con semilla 42, elegir 100, 300 o 600 aves y alternar entre vista oblicua, superior o lateral. Los cambios de cantidad reinician la bandada. Con la preferencia del sistema de movimiento reducido, comienza pausada.
+
+El renderizado está separado en `viewer/`: `FlightCamera` proyecta el volumen y el controlador conecta Canvas con `StarlingSimulation`. El servidor local compila todo con Bun, sin dependencias ni servicios externos. Los pasos físicos son fijos de 1/60 s; al ocultar la pestaña se suspende el avance y se descarta el tiempo acumulado. Si el equipo no alcanza el ritmo de renderizado, se limita el tiempo recuperado por cuadro a 0.1 s.
+
+Para usar otro puerto: `PORT=3001 bun run view`. Para generar un fragmento autocontenido: `bun run scripts/viewer.ts --fragment /ruta/visualizacion.html`.

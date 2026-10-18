@@ -1,0 +1,35 @@
+<div id="starling-view">
+  <style>
+    #starling-view { color: var(--foreground); }
+    #starling-view .flight-stage { position: relative; margin-top: 16px; }
+    #starling-view canvas { display: block; width: 100%; height: 420px; touch-action: pan-y; }
+    #starling-view .flight-stats { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 8px; color: var(--muted-foreground); }
+    #starling-view .flight-controls { margin-top: 12px; }
+    #starling-view label { display: flex; align-items: center; gap: 8px; }
+    @media (max-width: 440px) { #starling-view canvas { height: 320px; } }
+  </style>
+  <span class="sr-only" aria-hidden="true" data-color="bird" style="color:var(--viz-series-1)"></span>
+  <span class="sr-only" aria-hidden="true" data-color="border" style="color:var(--border)"></span>
+  <h2>Vuelo de estorninos</h2>
+  <div class="viz-controls flight-controls">
+    <button type="button" class="btn btn-primary" data-action="pause">Pausar</button>
+    <button type="button" class="btn" data-action="restart">Reiniciar</button>
+    <label class="form-label">Aves
+      <select class="form-select" data-control="count">
+        <option value="100">100</option><option value="300" selected>300</option><option value="600">600</option>
+      </select>
+    </label>
+    <label class="form-label">Vista
+      <select class="form-select" data-control="camera">
+        <option value="oblique">Oblicua</option><option value="top">Desde arriba</option><option value="side">Lateral</option>
+      </select>
+    </label>
+  </div>
+  <div class="flight-stage">
+    <canvas role="img" aria-label="Bandada de estorninos en un volumen tridimensional. Cada flecha indica la dirección de vuelo.">Simulación de vuelo en 3D. Usá los controles para pausar, reiniciar o cambiar la vista.</canvas>
+  </div>
+  <div class="flight-stats tabular-nums">
+    <span data-stat="count">300 aves</span><span data-stat="time">0.0 s</span><span>Semilla 42</span>
+  </div>
+  <span class="sr-only" aria-live="polite" data-status></span>
+</div>
