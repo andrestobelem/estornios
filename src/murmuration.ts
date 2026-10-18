@@ -69,7 +69,7 @@ export const SPECIES: Species[] = [
 
 /** The original 2D model, in screen pixels, with reusable neighbor buffers and simultaneous integration. */
 export class Murmuration {
-  readonly step: () => number;
+  readonly step: (fraction?: number) => number;
   readonly resize: (width: number, height: number) => void;
   readonly configure: (patch: Partial<Parameters>) => void;
   readonly setCount: (species: number, count: number) => void;
@@ -157,7 +157,9 @@ export class Murmuration {
 
     const nIdx = new Int32Array(NEIGH),
       nD = new Float32Array(NEIGH);
-    function step() {
+    function step(fraction = 1) {
+      if (!Number.isFinite(fraction) || fraction <= 0 || fraction > 1)
+        throw new RangeError("fraction must be in (0, 1]");
       buildGrid();
       const margin = 80;
       const alarmed = !!scare || state.hawk;
@@ -285,8 +287,8 @@ export class Murmuration {
       for (const b of birds) {
         const S = SPECIES[b.sp]!,
           base = P.spd * S.speed;
-        b.vx += b.ax;
-        b.vy += b.ay;
+        b.vx += b.ax * fraction;
+        b.vy += b.ay * fraction;
         let s = Math.hypot(b.vx, b.vy);
         const cap = base * (alarmed ? 1.5 : 1),
           minS = base * 0.55;
@@ -300,8 +302,8 @@ export class Murmuration {
           b.vy *= minS / (s || 1);
           s = minS;
         }
-        b.x += b.vx;
-        b.y += b.vy;
+        b.x += b.vx * fraction;
+        b.y += b.vy * fraction;
         // hard push out of obstacles
         for (const ob of obstacles) {
           const dx = b.x - ob.x,
@@ -320,14 +322,14 @@ export class Murmuration {
         sumS += s;
       }
       if (scare) {
-        scare.k *= 0.94;
+        scare.k *= Math.pow(0.94, fraction);
         if (scare.k < 0.05) scare = null;
       }
-      if (state.hawk) stepHawk();
+      if (state.hawk) stepHawk(fraction);
       return sumS / (birds.length || 1);
     }
 
-    function stepHawk() {
+    function stepHawk(fraction: number) {
       let best = null,
         bd = Infinity;
       for (let i = 0; i < birds.length; i += 4) {
@@ -342,16 +344,16 @@ export class Murmuration {
         const dx = best.x - hawk.x,
           dy = best.y - hawk.y,
           d = Math.hypot(dx, dy) || 1;
-        hawk.vx += (dx / d) * 0.18;
-        hawk.vy += (dy / d) * 0.18;
+        hawk.vx += (dx / d) * 0.18 * fraction;
+        hawk.vy += (dy / d) * 0.18 * fraction;
       }
       for (const ob of obstacles) {
         const dx = hawk.x - ob.x,
           dy = hawk.y - ob.y,
           d = Math.hypot(dx, dy) || 1;
         if (d < ob.r + 40) {
-          hawk.vx += (dx / d) * 0.4;
-          hawk.vy += (dy / d) * 0.4;
+          hawk.vx += (dx / d) * 0.4 * fraction;
+          hawk.vy += (dy / d) * 0.4 * fraction;
         }
       }
       const s = Math.hypot(hawk.vx, hawk.vy),
@@ -360,8 +362,8 @@ export class Murmuration {
         hawk.vx *= cap / s;
         hawk.vy *= cap / s;
       }
-      hawk.x += hawk.vx;
-      hawk.y += hawk.vy;
+      hawk.x += hawk.vx * fraction;
+      hawk.y += hawk.vy * fraction;
     }
 
     this.step = step;

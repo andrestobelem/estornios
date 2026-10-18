@@ -112,6 +112,18 @@ test("rejects invalid public input", () => {
 test("defaults to 300 starlings and no obstacles", () => {
   const scene = new Murmuration();
   expect(scene.view().birds.length).toBe(300);
-  expect(scene.view().birds.every(b => b.sp === 0)).toBe(true);
+  expect(scene.view().birds.every((b) => b.sp === 0)).toBe(true);
   expect(scene.view().obstacles).toEqual([]);
+});
+
+test("120 half steps preserve flight speed relative to 60 original steps", () => {
+  const full = new Murmuration(10000, 10000, [1, 0, 0], () => 0.5);
+  const half = new Murmuration(10000, 10000, [1, 0, 0], () => 0.5);
+  for (let i = 0; i < 60; i++) full.step();
+  for (let i = 0; i < 120; i++) half.step(0.5);
+  expect(half.view().birds[0]!.x).toBeCloseTo(full.view().birds[0]!.x, 8);
+  expect(half.view().birds[0]!.y).toBeCloseTo(full.view().birds[0]!.y, 8);
+  expect(half.view().birds[0]!.vx).toBe(full.view().birds[0]!.vx);
+  for (const fraction of [0, -1, 2, NaN])
+    expect(() => half.step(fraction)).toThrow();
 });

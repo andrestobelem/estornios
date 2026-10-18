@@ -1,5 +1,6 @@
 import { Murmuration } from "../src/murmuration.ts";
 import type { Parameters } from "../src/murmuration.ts";
+import { RenderCadence } from "./render-cadence.ts";
 import { SkyRenderer } from "./sky-renderer.ts";
 
 const element = <T extends HTMLElement>(id: string) => {
@@ -12,6 +13,7 @@ const renderer = new SkyRenderer(canvas);
 const viewport = renderer.resize();
 const scene = new Murmuration(viewport.width, viewport.height);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const cadence = new RenderCadence(120);
 const state = {
   paused: reducedMotion,
   trails: !reducedMotion,
@@ -73,6 +75,7 @@ function updateButtons() {
 }
 element("pause").addEventListener("click", () => {
   state.paused = !state.paused;
+  cadence.reset();
   last = 0;
   accumulator = 0;
   updateButtons();
@@ -126,6 +129,7 @@ canvas.addEventListener("pointerdown", (event) => {
   renderer.invalidate();
 });
 document.addEventListener("visibilitychange", () => {
+  cadence.reset();
   last = 0;
   accumulator = 0;
   statsTime = 0;
@@ -137,15 +141,19 @@ new ResizeObserver(() => {
 }).observe(canvas);
 
 function frame(now: number) {
+  if (!cadence.shouldRender(now)) {
+    requestAnimationFrame(frame);
+    return;
+  }
   const realElapsed = last ? (now - last) / 1000 : 0;
   const elapsed = Math.min(realElapsed, 0.1);
   last = now;
   if (!document.hidden) {
     if (!state.paused) {
       accumulator += elapsed;
-      while (accumulator >= 1 / 60) {
-        meanSpeed = scene.step();
-        accumulator -= 1 / 60;
+      while (accumulator >= 1 / 120) {
+        meanSpeed = scene.step(0.5);
+        accumulator -= 1 / 120;
       }
     }
     renderer.draw(scene, state.trails, state.paused, elapsed);
