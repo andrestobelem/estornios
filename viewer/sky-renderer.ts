@@ -37,6 +37,7 @@ export class SkyRenderer {
     paused: boolean,
     elapsed: number,
   ): void {
+    if (paused && !this.fresh) return;
     const ctx = this.ctx,
       W = this.width,
       H = this.height;

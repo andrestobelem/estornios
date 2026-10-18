@@ -59,3 +59,5 @@ La prueba de regresión ejecuta las fórmulas del HTML original guardado en `tes
 El benchmark mide únicamente la física en Bun, sin renderizado: no representa los FPS del navegador. Las especies y el comportamiento son aproximaciones artísticas; no hay garantía de ausencia de colisiones ni modelo aerodinámico.
 
 La búsqueda espacial reutiliza los buffers de celdas y comparte las listas de candidatos entre aves de la misma celda. Conserva el orden de recorrido y selección de vecinos de la referencia. El benchmark incluye la configuración inicial de 300 aves y reporta la mediana de cinco ejecuciones de 600 medios pasos, tras calentamiento.
+
+Al pausar, Canvas solo vuelve a dibujar cuando cambian la escena o el tamaño.

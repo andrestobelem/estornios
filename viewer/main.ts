@@ -75,6 +75,7 @@ function updateButtons() {
 }
 element("pause").addEventListener("click", () => {
   state.paused = !state.paused;
+  renderer.invalidate();
   cadence.reset();
   last = 0;
   accumulator = 0;
@@ -86,6 +87,7 @@ element("pause").addEventListener("click", () => {
 element("hawk").addEventListener("click", () => {
   state.hawk = !state.hawk;
   scene.setHawk(state.hawk);
+  renderer.invalidate();
   updateButtons();
   status.textContent = state.hawk ? "Halcón activado" : "Halcón retirado";
 });
@@ -96,6 +98,7 @@ element("trails").addEventListener("click", () => {
 });
 element("scatter").addEventListener("click", () => {
   scene.scatter();
+  renderer.invalidate();
   status.textContent = "Bandadas dispersadas";
 });
 element("clear").addEventListener("click", () => {
