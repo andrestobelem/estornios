@@ -1,0 +1,34 @@
+# Dependencias (bun install)
+node_modules
+
+# Archivos generados
+out
+dist
+*.tgz
+
+# Cobertura de código
+coverage
+*.lcov
+
+# Registros
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# Variables de entorno
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Cachés
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# Editores basados en IntelliJ
+.idea
+
+# Configuración de Finder (macOS)
+.DS_Store
