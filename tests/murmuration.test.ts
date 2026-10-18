@@ -30,12 +30,13 @@ function originalTrajectory(counts = [8, 3, 1], width = 1280, height = 720) {
     let W = ${width}, H = ${height};
     ${original}
     syncCounts();
-    obstacles = [{x: W*.38, y:H*.45, r:38}, {x:W*.66,y:H*.32,r:30}];
+    obstacles = [];
     const frames = [];
     for (let frame=0;frame<120;frame++) {
       if (frame===10) { P.wind=.5; P.coh=1.2; }
       if (frame===20) scare={x:W*.4,y:H*.35,k:1};
       if (frame===30) { state.hawk=true; hawk.x=Math.random()<.5?-10:W+10; hawk.y=H*.2; hawk.vx=0; hawk.vy=0; }
+      if (frame===40) obstacles.push({x:400,y:200,r:26+Math.random()*22});
       const speed=step();
       if ([0, 20, 60, 119].includes(frame)) frames.push(JSON.parse(JSON.stringify({birds,obstacles,scare,hawk:state.hawk?hawk:null,speed})));
     }
@@ -57,6 +58,7 @@ test("matches original trajectories exactly in sparse and dense flocks", () => {
       if (frame === 10) scene.configure({ wind: 0.5, coh: 1.2 });
       if (frame === 20) scene.scareAt(width * 0.4, height * 0.35);
       if (frame === 30) scene.setHawk(true);
+      if (frame === 40) scene.toggleObstacle(400, 200);
       const speed = scene.step();
       if ([0, 20, 60, 119].includes(frame))
         actual.push({ ...scene.snapshot(), speed });
@@ -105,4 +107,11 @@ test("rejects invalid public input", () => {
   expect(() => scene.resize(0, 720)).toThrow();
   expect(() => scene.scareAt(Infinity, 0)).toThrow();
   expect(() => scene.toggleObstacle(0, NaN)).toThrow();
+});
+
+test("defaults to 300 starlings and no obstacles", () => {
+  const scene = new Murmuration();
+  expect(scene.view().birds.length).toBe(300);
+  expect(scene.view().birds.every(b => b.sp === 0)).toBe(true);
+  expect(scene.view().obstacles).toEqual([]);
 });

@@ -13,7 +13,7 @@ import { Murmuration } from "./src/murmuration.ts";
 import { SeededRandom } from "./src/random.ts";
 if (import.meta.main) {
   const rng = new SeededRandom(42);
-  const scene = new Murmuration(1280, 720, [450, 90, 40], () => rng.next());
+  const scene = new Murmuration(1280, 720, [300, 0, 0], () => rng.next());
   let meanSpeed = 0;
   for (let frame = 0; frame < 600; frame++) meanSpeed = scene.step();
   console.log(

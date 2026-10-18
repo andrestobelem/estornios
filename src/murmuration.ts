@@ -88,7 +88,7 @@ export class Murmuration {
   constructor(
     width = 1280,
     height = 720,
-    initialCounts: readonly number[] = [450, 90, 40],
+    initialCounts: readonly number[] = [300, 0, 0],
     random: () => number = Math.random,
   ) {
     if (![width, height].every((n) => Number.isFinite(n) && n > 0))
@@ -440,10 +440,6 @@ export class Murmuration {
       obstacles = [];
     };
     syncCounts();
-    obstacles = [
-      { x: W * 0.38, y: H * 0.45, r: 38 },
-      { x: W * 0.66, y: H * 0.32, r: 30 },
-    ];
   }
 
   /** Detached data for callers that need to retain or modify a snapshot. */

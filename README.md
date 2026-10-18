@@ -9,6 +9,8 @@ bun run view
 
 Abrir `http://127.0.0.1:3000/`. Otro puerto: `PORT=3001 bun run view`.
 
+El inicio usa **300 estorninos, sin otras especies ni obstáculos**.
+
 ## Controles
 
 - Separación, alineación, cohesión, velocidad y viento cambian sin reiniciar las aves.
@@ -34,7 +36,7 @@ El modelo anterior en 3D fue reemplazado por el modelo 2D de la referencia. Las 
 ```ts
 import { Murmuration } from './index.ts';
 
-const scene = new Murmuration(1280, 720, [450, 90, 40]);
+const scene = new Murmuration(1280, 720, [300, 0, 0]);
 scene.configure({ sep: 1.6, ali: 1, coh: 0.9, spd: 3.4, wind: 0 });
 const meanSpeed = scene.step(); // un paso físico, equivalente a 1/60 s
 const snapshot = scene.snapshot();
