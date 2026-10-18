@@ -1,18 +1,14 @@
-import type { Vector3 } from '../src/types.ts';
+/** Side-on view of the 3D scene, with a reversible screen/world transform. */
+export class SkyCamera {
+  constructor(readonly width: number, readonly height: number) {}
 
-/** Orthographic camera; rotates the flight volume around its vertical axis. */
-export class FlightCamera {
-  constructor(public yaw = -0.6, public pitch = 0.3) {}
+  get scale(): number { return Math.min(this.width / 400, this.height / 270); }
 
-  project(point: Vector3, width: number, height: number) {
-    const x = point.x * Math.cos(this.yaw) - point.z * Math.sin(this.yaw);
-    const depth = point.x * Math.sin(this.yaw) + point.z * Math.cos(this.yaw);
-    const y = point.y * Math.cos(this.pitch) - depth * Math.sin(this.pitch);
-    const scale = Math.min(width / 320, height / 260);
-    return {
-      x: width / 2 + x * scale,
-      y: height / 2 - y * scale,
-      depth: point.y * Math.sin(this.pitch) + depth * Math.cos(this.pitch),
-    };
+  project(x: number, y: number) {
+    return { x: this.width / 2 + x * this.scale, y: this.height * 0.4 - y * this.scale };
+  }
+
+  unproject(x: number, y: number) {
+    return { x: (x - this.width / 2) / this.scale, y: -(y - this.height * 0.4) / this.scale };
   }
 }

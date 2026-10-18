@@ -61,8 +61,17 @@ La API de `Starling` exige un identificador entero seguro no negativo y componen
 bun run view
 ```
 
-Abrir `http://127.0.0.1:3000/`. La visualización usa el mismo motor 3D y dibuja cada ave como una flecha orientada según su velocidad. Permite pausar, reiniciar con semilla 42, elegir 100, 300 o 600 aves y alternar entre vista oblicua, superior o lateral. Los cambios de cantidad reinician la bandada. Con la preferencia del sistema de movimiento reducido, comienza pausada.
+Abrir `http://127.0.0.1:3000/`. La vista sigue la referencia «Murmullo de Estorninos»: cielo de atardecer, siluetas con estelas y libreta de campo flotante. En teléfonos la libreta se convierte en un panel inferior que puede ocultarse.
 
-El renderizado está separado en `viewer/`: `FlightCamera` proyecta el volumen y el controlador conecta Canvas con `StarlingSimulation`. El servidor local compila todo con Bun, sin dependencias ni servicios externos. Los pasos físicos son fijos de 1/60 s; al ocultar la pestaña se suspende el avance y se descarta el tiempo acumulado. Si el equipo no alcanza el ritmo de renderizado, se limita el tiempo recuperado por cuadro a 0.1 s.
+- Ajustar separación, alineación, cohesión, velocidad y viento sin reiniciar las posiciones.
+- Cambiar la población de estorninos (0–1200), golondrinas (0–400) y palomas (0–200). Se conservan las aves existentes al aumentar o reducir una población.
+- Tocar el cielo para espantar; elegir «Poner obstáculo» para agregar o quitar obstáculos. «Quitar obstáculos» los elimina todos.
+- Activar el halcón, alternar estelas, pausar o dispersar las bandadas. Con movimiento reducido, la vista comienza pausada y sin estelas.
 
-Para usar otro puerto: `PORT=3001 bun run view`. Para generar un fragmento autocontenido: `bun run scripts/viewer.ts --fragment /ruta/visualizacion.html`.
+`Murmuration` coordina las tres bandadas y las fuerzas del entorno usando `Starling`, `FlockingBehavior` y `SpatialGrid`. Cada especie se alinea y cohesiona con sus propias vecinas; evita también aves de otras especies. Los perfiles son aproximaciones artísticas. Los obstáculos son cilindros a través de la profundidad; el halcón persigue al ave más cercana. No hay captura ni mortalidad.
+
+`SkyRenderer` dibuja la escena, y `SkyCamera` convierte entre coordenadas del mundo y de la pantalla para que los clics coincidan con las fuerzas. La simulación sigue siendo 3D y se observa de lado; la profundidad modifica el tamaño y el orden de dibujo. Velocidades en unidades arbitrarias por segundo. No se garantiza la ausencia de colisiones entre aves.
+
+El servidor local compila con Bun sin dependencias adicionales. Las fuentes se cargan desde Google Fonts con alternativas locales. Los pasos físicos son de 1/60 s; al ocultar la pestaña se suspende el avance y se descarta el tiempo acumulado. En equipos lentos se recuperan como máximo 0.1 s por cuadro, por lo que el tiempo simulado puede avanzar más lento que el real. Los FPS se calculan con el tiempo real entre cuadros.
+
+Para otro puerto: `PORT=3001 bun run view`.

@@ -1,133 +1,107 @@
-import { StarlingSimulation } from '../src/simulation.ts';
-import type { Vector3 } from '../src/types.ts';
-import { FlightCamera } from './projection.ts';
+import { Murmuration } from '../src/murmuration.ts';
+import type { FieldParameters } from '../src/murmuration.ts';
+import { SkyRenderer } from './sky-renderer.ts';
 
-interface ViewState { count: number; paused: boolean; camera: string }
-interface WidgetHost {
-  widgetState?: { modelContent?: Partial<ViewState> };
-  setWidgetState?(state: { modelContent: ViewState }): Promise<unknown>;
-}
-const host = (window as Window & { openai?: WidgetHost }).openai;
-const root = document.getElementById('starling-view')!;
-const canvas = root.querySelector('canvas')!;
-const context = canvas.getContext('2d');
-if (!context) throw new Error('El navegador no admite Canvas 2D');
-const ctx = context;
-const pause = root.querySelector<HTMLButtonElement>('[data-action="pause"]')!;
-const restart = root.querySelector<HTMLButtonElement>('[data-action="restart"]')!;
-const countInput = root.querySelector<HTMLSelectElement>('[data-control="count"]')!;
-const cameraInput = root.querySelector<HTMLSelectElement>('[data-control="camera"]')!;
-const status = root.querySelector<HTMLElement>('[data-status]')!;
-const clock = root.querySelector<HTMLElement>('[data-stat="time"]')!;
-const countLabel = root.querySelector<HTMLElement>('[data-stat="count"]')!;
-const camera = new FlightCamera();
-let state: ViewState = { count: 300, paused: matchMedia('(prefers-reduced-motion: reduce)').matches, camera: 'oblique' };
-let simulation = new StarlingSimulation({ count: state.count, seed: 42 });
-let seconds = 0, accumulator = 0, last = 0;
-let width = 0, height = 0;
+const element = <T extends HTMLElement>(id: string) => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Missing element: ${id}`);
+  return el as T;
+};
+const canvas = element<HTMLCanvasElement>('sky');
+const renderer = new SkyRenderer(canvas);
+const scene = new Murmuration();
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const state = { paused: reducedMotion, trails: !reducedMotion, hawk: false, mode: 'scare' };
+const status = element('status');
+const count = element('t-count'), speed = element('t-speed'), fps = element('t-fps');
+let last = 0, accumulator = 0, frames = 0, statsTime = 0, meanSpeed = 0;
 
-function syncControls() {
-  countInput.value = String(state.count);
-  cameraInput.value = state.camera;
-  pause.textContent = state.paused ? 'Continuar' : 'Pausar';
-  countLabel.textContent = `${state.count} aves`;
-  camera.yaw = state.camera === 'side' ? 0 : state.camera === 'top' ? 0 : -0.6;
-  camera.pitch = state.camera === 'top' ? Math.PI / 2 : state.camera === 'side' ? 0 : 0.3;
-}
-function reset() {
-  simulation = new StarlingSimulation({ count: state.count, seed: 42 });
-  seconds = 0; accumulator = 0; last = 0;
-  syncControls();
-  draw();
-}
-function save() { host?.setWidgetState?.({ modelContent: { ...state } }).catch(() => {}); }
-function applySaved(saved?: Partial<ViewState>) {
-  if (!saved) return;
-  const count = [100, 300, 600].includes(saved.count ?? 0) ? saved.count! : state.count;
-  state = {
-    count,
-    paused: typeof saved.paused === 'boolean' ? saved.paused : state.paused,
-    camera: ['oblique', 'top', 'side'].includes(saved.camera ?? '') ? saved.camera! : state.camera,
+const parameters: Record<string, keyof FieldParameters> = { sep: 'separation', ali: 'alignment', coh: 'cohesion', spd: 'speed', wind: 'wind' };
+for (const [id, key] of Object.entries(parameters)) {
+  const input = element<HTMLInputElement>(id), output = element<HTMLOutputElement>(`${id}-o`);
+  const update = () => {
+    const value = Number(input.value);
+    scene.configure({ [key]: value });
+    output.value = key === 'wind' ? `${value > 0 ? '→ ' : value < 0 ? '← ' : ''}${Math.abs(value).toFixed(2)}` : value.toFixed(key === 'speed' ? 1 : 2);
   };
-  reset();
+  input.addEventListener('input', update); update();
 }
-function draw() {
-  if (!width || !height) return;
-  const birdColor = getComputedStyle(root.querySelector('[data-color="bird"]')!).color;
-  const borderColor = getComputedStyle(root.querySelector('[data-color="border"]')!).color;
-  ctx.clearRect(0, 0, width, height);
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 1;
-  // Draw the flight volume behind the flock.
-  for (const x of [-100, 100]) for (const y of [-60, 60]) for (const z of [-100, 100]) {
-    const a: Vector3 = { x, y, z };
-    for (const axis of ['x', 'y', 'z'] as const) {
-      if (a[axis] > 0) continue;
-      const b = { ...a, [axis]: -a[axis] };
-      const from = camera.project(a, width, height), to = camera.project(b, width, height);
-      ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
-    }
-  }
-  ctx.fillStyle = birdColor;
-  const birds = simulation.snapshot().map(bird => ({
-    bird, projected: camera.project(bird.position, width, height),
-  })).sort((a, b) => a.projected.depth - b.projected.depth);
-  for (const { bird, projected: p } of birds) {
-    const heading = camera.project({
-      x: bird.position.x + bird.velocity.x,
-      y: bird.position.y + bird.velocity.y,
-      z: bird.position.z + bird.velocity.z,
-    }, width, height);
-    const angle = Math.atan2(heading.y - p.y, heading.x - p.x);
-    const size = 3.5 + (p.depth + 160) / 320;
-    ctx.globalAlpha = Math.max(0.4, Math.min(1, 0.7 + p.depth / 450));
-    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(angle);
-    ctx.beginPath(); ctx.moveTo(size, 0); ctx.lineTo(-size, size * 0.55);
-    ctx.lineTo(-size * 0.4, 0); ctx.lineTo(-size, -size * 0.55);
-    ctx.closePath(); ctx.fill(); ctx.restore();
-  }
-  ctx.globalAlpha = 1;
-  clock.textContent = `${seconds.toFixed(1)} s`;
+for (let species = 0; species < 3; species++) {
+  const input = element<HTMLInputElement>(`n${species}`), output = element<HTMLOutputElement>(`n${species}-o`);
+  const update = () => {
+    const value = Number(input.value);
+    scene.setCount(species, value); output.value = String(value);
+    count.textContent = String(scene.snapshot().length);
+    renderer.invalidate();
+  };
+  input.addEventListener('input', update); update();
 }
+
+function updateButtons() {
+  for (const key of ['hawk', 'trails', 'pause'] as const) {
+    const button = element<HTMLButtonElement>(key);
+    const pressed = key === 'pause' ? state.paused : state[key];
+    button.setAttribute('aria-pressed', String(pressed));
+  }
+  element('pause').textContent = state.paused ? 'Seguir' : 'Pausa';
+}
+element('pause').addEventListener('click', () => {
+  state.paused = !state.paused; last = 0; accumulator = 0;
+  updateButtons(); status.textContent = state.paused ? 'Simulación pausada' : 'Simulación en marcha';
+});
+element('hawk').addEventListener('click', () => {
+  state.hawk = !state.hawk; scene.setHawk(state.hawk); updateButtons();
+  status.textContent = state.hawk ? 'Halcón activado' : 'Halcón retirado';
+});
+element('trails').addEventListener('click', () => { state.trails = !state.trails; renderer.invalidate(); updateButtons(); });
+element('scatter').addEventListener('click', () => { scene.scatter(); status.textContent = 'Bandadas dispersadas'; });
+element('clear').addEventListener('click', () => { scene.clearObstacles(); renderer.invalidate(); status.textContent = 'Obstáculos retirados'; });
+
+function setMode(mode: string) {
+  state.mode = mode;
+  element('m-scare').setAttribute('aria-pressed', String(mode === 'scare'));
+  element('m-obst').setAttribute('aria-pressed', String(mode === 'obst'));
+  element('hint').textContent = mode === 'obst'
+    ? 'Tocá el cielo para poner un obstáculo. Tocá uno existente para quitarlo. Las aves intentan rodearlo.'
+    : 'Tocá el cielo para espantar a las aves. Cada especie se agrupa con sus vecinas y se aparta de las demás.';
+}
+element('m-scare').addEventListener('click', () => setMode('scare'));
+element('m-obst').addEventListener('click', () => setMode('obst'));
+const panelBody = element('body'), collapse = element<HTMLButtonElement>('collapse');
+collapse.addEventListener('click', () => {
+  panelBody.hidden = !panelBody.hidden;
+  collapse.setAttribute('aria-expanded', String(!panelBody.hidden));
+  collapse.textContent = panelBody.hidden ? 'Mostrar' : 'Ocultar';
+});
+canvas.addEventListener('pointerdown', event => {
+  const p = renderer.world(event.clientX, event.clientY);
+  if (state.mode === 'obst') scene.toggleObstacle(p.x, p.y);
+  else scene.scare(p.x, p.y);
+  renderer.invalidate();
+});
+document.addEventListener('visibilitychange', () => { last = 0; accumulator = 0; statsTime = 0; frames = 0; });
+new ResizeObserver(() => renderer.resize()).observe(canvas);
+
 function frame(now: number) {
-  const elapsed = last ? Math.min((now - last) / 1000, 0.1) : 0;
+  const realElapsed = last ? (now - last) / 1000 : 0;
+  const elapsed = Math.min(realElapsed, 0.1);
   last = now;
-  if (!state.paused && !document.hidden) {
-    accumulator += elapsed;
-    while (accumulator >= 1 / 60) {
-      simulation.step(1 / 60);
-      seconds += 1 / 60;
-      accumulator -= 1 / 60;
+  if (!document.hidden) {
+    if (!state.paused) {
+      accumulator += elapsed;
+      while (accumulator >= 1 / 60) { scene.step(1 / 60); accumulator -= 1 / 60; }
+    }
+    meanSpeed = renderer.draw(scene, state.trails, state.paused, elapsed);
+    frames++; statsTime += realElapsed;
+    if (statsTime >= 0.5) {
+      speed.textContent = meanSpeed.toFixed(1);
+      speed.setAttribute('aria-label', `${meanSpeed.toFixed(1)} unidades por segundo`);
+      fps.textContent = String(Math.round(frames / statsTime));
+      statsTime = 0; frames = 0;
     }
   }
-  draw();
   requestAnimationFrame(frame);
 }
-pause.addEventListener('click', () => {
-  state.paused = !state.paused;
-  accumulator = 0; last = 0;
-  syncControls(); save();
-  status.textContent = state.paused ? 'Simulación pausada' : 'Simulación en marcha';
-});
-restart.addEventListener('click', () => { reset(); save(); status.textContent = 'Bandada reiniciada con semilla 42'; });
-countInput.addEventListener('change', () => {
-  state.count = Number(countInput.value); reset(); save();
-  status.textContent = `Nueva bandada de ${state.count} aves`;
-});
-cameraInput.addEventListener('change', () => { state.camera = cameraInput.value; syncControls(); draw(); save(); });
-document.addEventListener('visibilitychange', () => { last = 0; accumulator = 0; });
-window.addEventListener('openai:set_globals', event => {
-  const globals = (event as CustomEvent<{ globals?: { widgetState?: WidgetHost['widgetState'] } }>).detail?.globals;
-  applySaved(globals?.widgetState?.modelContent);
-});
-new ResizeObserver(() => {
-  const rect = canvas.getBoundingClientRect();
-  width = rect.width; height = rect.height;
-  const ratio = Math.min(devicePixelRatio || 1, 2);
-  canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  draw();
-}).observe(canvas);
-applySaved(host?.widgetState?.modelContent);
-syncControls();
+scene.toggleObstacle(-45, 0); scene.toggleObstacle(65, 30);
+renderer.resize(); updateButtons(); setMode('scare');
 requestAnimationFrame(frame);
