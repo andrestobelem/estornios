@@ -1,6 +1,6 @@
 import { Murmuration } from "../src/murmuration.ts";
 import type { Parameters } from "../src/murmuration.ts";
-import { RenderCadence } from "./render-cadence.ts";
+import { FrameMetrics } from "./frame-metrics.ts";
 import { SkyRenderer } from "./sky-renderer.ts";
 
 const element = <T extends HTMLElement>(id: string) => {
@@ -13,7 +13,7 @@ const renderer = new SkyRenderer(canvas);
 const viewport = renderer.resize();
 const scene = new Murmuration(viewport.width, viewport.height);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const cadence = new RenderCadence(120);
+const metrics = new FrameMetrics();
 const state = {
   paused: reducedMotion,
   trails: !reducedMotion,
@@ -26,8 +26,6 @@ const count = element("t-count"),
   fps = element("t-fps");
 let last = 0,
   accumulator = 0,
-  frames = 0,
-  statsTime = 0,
   meanSpeed = 0;
 
 const parameters: Record<string, keyof Parameters> = {
@@ -76,7 +74,7 @@ function updateButtons() {
 element("pause").addEventListener("click", () => {
   state.paused = !state.paused;
   renderer.invalidate();
-  cadence.reset();
+  metrics.reset();
   last = 0;
   accumulator = 0;
   updateButtons();
@@ -132,11 +130,9 @@ canvas.addEventListener("pointerdown", (event) => {
   renderer.invalidate();
 });
 document.addEventListener("visibilitychange", () => {
-  cadence.reset();
+  metrics.reset();
   last = 0;
   accumulator = 0;
-  statsTime = 0;
-  frames = 0;
 });
 new ResizeObserver(() => {
   const size = renderer.resize();
@@ -144,10 +140,7 @@ new ResizeObserver(() => {
 }).observe(canvas);
 
 function frame(now: number) {
-  if (!cadence.shouldRender(now)) {
-    requestAnimationFrame(frame);
-    return;
-  }
+  const workStart = performance.now();
   const realElapsed = last ? (now - last) / 1000 : 0;
   const elapsed = Math.min(realElapsed, 0.1);
   last = now;
@@ -159,18 +152,19 @@ function frame(now: number) {
         accumulator -= 1 / 120;
       }
     }
-    renderer.draw(scene, state.trails, state.paused, elapsed);
-    frames++;
-    statsTime += realElapsed;
-    if (statsTime >= 0.5) {
+    const painted = renderer.draw(scene, state.trails, state.paused, elapsed);
+    const sample = metrics.record(now, performance.now() - workStart, painted);
+    if (sample) {
       speed.textContent = meanSpeed.toFixed(1);
       speed.setAttribute(
         "aria-label",
         `${meanSpeed.toFixed(1)} píxeles por paso`,
       );
-      fps.textContent = String(Math.round(frames / statsTime));
-      statsTime = 0;
-      frames = 0;
+      fps.textContent = String(Math.round(sample.renderedPerSecond));
+      element("t-raf").textContent = String(
+        Math.round(sample.callbacksPerSecond),
+      );
+      element("t-work").textContent = sample.meanWorkMs.toFixed(2);
     }
   }
   requestAnimationFrame(frame);

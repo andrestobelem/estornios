@@ -36,8 +36,8 @@ export class SkyRenderer {
     trails: boolean,
     paused: boolean,
     elapsed: number,
-  ): void {
-    if (paused && !this.fresh) return;
+  ): boolean {
+    if (paused && !this.fresh) return false;
     const ctx = this.ctx,
       W = this.width,
       H = this.height;
@@ -130,5 +130,6 @@ export class SkyRenderer {
 
     draw();
     this.fresh = false;
+    return true;
   }
 }

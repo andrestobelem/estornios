@@ -24,7 +24,7 @@ El inicio usa **300 estorninos, sin otras especies ni obstáculos**.
 - `src/murmuration.ts`: modelo original extraído a `Murmuration`, con búsqueda espacial y buffers reutilizables para las siete vecinas más cercanas. Primero calcula fuerzas para todas las aves, después las integra.
 - `src/starling.ts`: entidad `Starling`, con posición, velocidad y aceleración en 2D.
 - `viewer/sky-renderer.ts`: cielo y dibujo agrupado por especie, como en la referencia. Sin copias de la bandada, ordenamiento por profundidad ni transformaciones de Canvas por ave.
-- `viewer/main.ts`: controles y reloj de animación con objetivo de 120 FPS y 120 medios pasos físicos por segundo. Desvincula la velocidad del vuelo de la frecuencia de refresco de pantalla.
+- `viewer/main.ts`: controles y reloj de animación con dibujo en cada callback del navegador y 120 medios pasos físicos por segundo. Desvincula la velocidad del vuelo de la frecuencia de refresco de pantalla.
 - `scripts/viewer.ts`: empaquetado con Bun y servidor local.
 
 El modelo anterior en 3D fue reemplazado por el modelo 2D de la referencia. Las posiciones se expresan en píxeles y las velocidades en píxeles por paso físico. Las diferencias deliberadas con el HTML original son la pausa corregida, soporte de movimiento reducido, tiempo físico fijo a 120 medios pasos por segundo, validación de entradas y snapshots separados del acceso de renderizado.
@@ -44,7 +44,7 @@ const snapshot = scene.snapshot();
 
 Se puede inyectar una función aleatoria como cuarto argumento para reproducir resultados. `bun start` ejecuta un ejemplo determinista de diez segundos en consola.
 
-El dibujo apunta a 120 FPS cuando la pantalla y el navegador lo permiten. En pantallas de 60 Hz se muestran hasta 60 FPS. Cada actualización física usa `step(0.5)` para conservar la escala de tiempo del original; `step()` mantiene el paso original de 1/60 s.
+El dibujo usa todos los callbacks de `requestAnimationFrame`, sin limitador propio. Con callbacks a 120 Hz puede dibujar 120 cuadros por segundo. El panel separa FPS dibujados, frecuencia de callbacks (rAF) y tiempo medio de trabajo de física y dibujo en JavaScript (CPU, sin medir la GPU). Cada actualización física usa `step(0.5)` para conservar la escala de tiempo del original; `step()` mantiene el paso original de 1/60 s.
 
 ## Verificación
 
