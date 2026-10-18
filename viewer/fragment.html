@@ -13,10 +13,7 @@
   --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
 }
-html, body { height: 100%; margin: 0; }
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+html, body { height: 100%; }
 body { background: var(--sky-top); color: var(--ink); font-family: var(--f-body); overflow: hidden; }
 #sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
 
@@ -45,7 +42,7 @@ body { background: var(--sky-top); color: var(--ink); font-family: var(--f-body)
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 14px 16px 16px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 12px;
 }
 .panel-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 h2, h3 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); }
@@ -53,7 +50,7 @@ h3 { padding-top: 10px; border-top: 1px solid var(--line); }
 .toggle { background: none; border: 1px solid var(--line); color: var(--ink); font: 500 12px var(--f-body); padding: 4px 10px; border-radius: 4px; cursor: pointer; }
 .toggle:hover { border-color: var(--accent); }
 #body { display: flex; flex-direction: column; gap: 12px; }
-.controls { display: grid; gap: 8px; }
+.controls { display: grid; gap: 10px; }
 .ctl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; }
 .ctl label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
 .ctl label small { color: var(--ink-dim); font-size: 11px; }
@@ -79,16 +76,16 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
 }
 </style>
 
-<canvas id="sky" role="img" aria-label="Tres especies de aves vuelan sobre un cielo de atardecer. Tocá el cielo para espantarlas o colocar obstáculos.">Simulación de bandadas al atardecer.</canvas>
+<canvas id="sky" aria-label="Bandada de aves simulada"></canvas>
 
 <header class="head">
   <div>
     <h1>Murmullo de Estorninos</h1>
-    <p>Cada ave sigue tres reglas con sus siete vecinas más cercanas de la misma especie: mantener distancia, alinearse y no quedar sola. La forma de cada bandada sale de ahí.</p>
+    <p>Cada ave sigue tres reglas con sus siete vecinas más cercanas de la misma especie: no chocar, alinearse y no quedar sola. La forma de cada bandada sale de ahí.</p>
   </div>
   <div class="tally">
     <div><b id="t-count">0</b> aves</div>
-    <div>vel. media <b id="t-speed">0</b> u/s</div>
+    <div>vel. media <b id="t-speed">0</b></div>
     <div><b id="t-fps">0</b> fps</div>
   </div>
 </header>
@@ -130,14 +127,6 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
     <p class="hint" id="hint">Tocá el cielo para espantar a las aves. Las especies no se mezclan, pero sí se esquivan entre sí.</p>
   </div>
 </section>
-<p class="sr-only" role="status" aria-live="polite" id="status"></p>
 
-<style>
-@media (max-width: 560px) {
-  .panel { max-height: 52dvh; }
-  .head h1 { max-width: 240px; }
-}
-@media (pointer: coarse) {
-  button, input[type=range] { min-height: 44px; }
-}
-</style>
+<style>[hidden] { display: none !important; } .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }</style>
+<p class="sr-only" id="status" role="status" aria-live="polite"></p>

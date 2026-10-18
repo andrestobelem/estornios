@@ -11,6 +11,7 @@
   },
   "scripts": {
     "start": "bun run index.ts",
-    "view": "bun run scripts/viewer.ts"
+    "view": "bun run scripts/viewer.ts",
+    "bench": "bun run scripts/benchmark.ts"
   }
 }

@@ -1,86 +1,140 @@
-import { Murmuration } from '../src/murmuration.ts';
-import type { FieldParameters } from '../src/murmuration.ts';
-import { SkyRenderer } from './sky-renderer.ts';
+import { Murmuration } from "../src/murmuration.ts";
+import type { Parameters } from "../src/murmuration.ts";
+import { SkyRenderer } from "./sky-renderer.ts";
 
 const element = <T extends HTMLElement>(id: string) => {
   const el = document.getElementById(id);
   if (!el) throw new Error(`Missing element: ${id}`);
   return el as T;
 };
-const canvas = element<HTMLCanvasElement>('sky');
+const canvas = element<HTMLCanvasElement>("sky");
 const renderer = new SkyRenderer(canvas);
-const scene = new Murmuration();
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const state = { paused: reducedMotion, trails: !reducedMotion, hawk: false, mode: 'scare' };
-const status = element('status');
-const count = element('t-count'), speed = element('t-speed'), fps = element('t-fps');
-let last = 0, accumulator = 0, frames = 0, statsTime = 0, meanSpeed = 0;
+const viewport = renderer.resize();
+const scene = new Murmuration(viewport.width, viewport.height);
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const state = {
+  paused: reducedMotion,
+  trails: !reducedMotion,
+  hawk: false,
+  mode: "scare",
+};
+const status = element("status");
+const count = element("t-count"),
+  speed = element("t-speed"),
+  fps = element("t-fps");
+let last = 0,
+  accumulator = 0,
+  frames = 0,
+  statsTime = 0,
+  meanSpeed = 0;
 
-const parameters: Record<string, keyof FieldParameters> = { sep: 'separation', ali: 'alignment', coh: 'cohesion', spd: 'speed', wind: 'wind' };
+const parameters: Record<string, keyof Parameters> = {
+  sep: "sep",
+  ali: "ali",
+  coh: "coh",
+  spd: "spd",
+  wind: "wind",
+};
 for (const [id, key] of Object.entries(parameters)) {
-  const input = element<HTMLInputElement>(id), output = element<HTMLOutputElement>(`${id}-o`);
+  const input = element<HTMLInputElement>(id),
+    output = element<HTMLOutputElement>(`${id}-o`);
   const update = () => {
     const value = Number(input.value);
     scene.configure({ [key]: value });
-    output.value = key === 'wind' ? `${value > 0 ? '→ ' : value < 0 ? '← ' : ''}${Math.abs(value).toFixed(2)}` : value.toFixed(key === 'speed' ? 1 : 2);
+    output.value =
+      key === "wind"
+        ? `${value > 0 ? "→ " : value < 0 ? "← " : ""}${Math.abs(value).toFixed(2)}`
+        : value.toFixed(key === "spd" ? 1 : 2);
   };
-  input.addEventListener('input', update); update();
+  input.addEventListener("input", update);
+  update();
 }
 for (let species = 0; species < 3; species++) {
-  const input = element<HTMLInputElement>(`n${species}`), output = element<HTMLOutputElement>(`n${species}-o`);
+  const input = element<HTMLInputElement>(`n${species}`),
+    output = element<HTMLOutputElement>(`n${species}-o`);
   const update = () => {
     const value = Number(input.value);
-    scene.setCount(species, value); output.value = String(value);
-    count.textContent = String(scene.snapshot().length);
+    scene.setCount(species, value);
+    output.value = String(value);
+    count.textContent = String(scene.view().birds.length);
     renderer.invalidate();
   };
-  input.addEventListener('input', update); update();
+  input.addEventListener("input", update);
+  update();
 }
 
 function updateButtons() {
-  for (const key of ['hawk', 'trails', 'pause'] as const) {
+  for (const key of ["hawk", "trails", "pause"] as const) {
     const button = element<HTMLButtonElement>(key);
-    const pressed = key === 'pause' ? state.paused : state[key];
-    button.setAttribute('aria-pressed', String(pressed));
+    const pressed = key === "pause" ? state.paused : state[key];
+    button.setAttribute("aria-pressed", String(pressed));
   }
-  element('pause').textContent = state.paused ? 'Seguir' : 'Pausa';
+  element("pause").textContent = state.paused ? "Seguir" : "Pausa";
 }
-element('pause').addEventListener('click', () => {
-  state.paused = !state.paused; last = 0; accumulator = 0;
-  updateButtons(); status.textContent = state.paused ? 'Simulación pausada' : 'Simulación en marcha';
+element("pause").addEventListener("click", () => {
+  state.paused = !state.paused;
+  last = 0;
+  accumulator = 0;
+  updateButtons();
+  status.textContent = state.paused
+    ? "Simulación pausada"
+    : "Simulación en marcha";
 });
-element('hawk').addEventListener('click', () => {
-  state.hawk = !state.hawk; scene.setHawk(state.hawk); updateButtons();
-  status.textContent = state.hawk ? 'Halcón activado' : 'Halcón retirado';
+element("hawk").addEventListener("click", () => {
+  state.hawk = !state.hawk;
+  scene.setHawk(state.hawk);
+  updateButtons();
+  status.textContent = state.hawk ? "Halcón activado" : "Halcón retirado";
 });
-element('trails').addEventListener('click', () => { state.trails = !state.trails; renderer.invalidate(); updateButtons(); });
-element('scatter').addEventListener('click', () => { scene.scatter(); status.textContent = 'Bandadas dispersadas'; });
-element('clear').addEventListener('click', () => { scene.clearObstacles(); renderer.invalidate(); status.textContent = 'Obstáculos retirados'; });
+element("trails").addEventListener("click", () => {
+  state.trails = !state.trails;
+  renderer.invalidate();
+  updateButtons();
+});
+element("scatter").addEventListener("click", () => {
+  scene.scatter();
+  status.textContent = "Bandadas dispersadas";
+});
+element("clear").addEventListener("click", () => {
+  scene.clearObstacles();
+  renderer.invalidate();
+  status.textContent = "Obstáculos retirados";
+});
 
 function setMode(mode: string) {
   state.mode = mode;
-  element('m-scare').setAttribute('aria-pressed', String(mode === 'scare'));
-  element('m-obst').setAttribute('aria-pressed', String(mode === 'obst'));
-  element('hint').textContent = mode === 'obst'
-    ? 'Tocá el cielo para poner un obstáculo. Tocá uno existente para quitarlo. Las aves intentan rodearlo.'
-    : 'Tocá el cielo para espantar a las aves. Cada especie se agrupa con sus vecinas y se aparta de las demás.';
+  element("m-scare").setAttribute("aria-pressed", String(mode === "scare"));
+  element("m-obst").setAttribute("aria-pressed", String(mode === "obst"));
+  element("hint").textContent =
+    mode === "obst"
+      ? "Tocá el cielo para poner un obstáculo. Tocá uno existente para quitarlo. Las aves intentan rodearlo."
+      : "Tocá el cielo para espantar a las aves. Cada especie se agrupa con sus vecinas y se aparta de las demás.";
 }
-element('m-scare').addEventListener('click', () => setMode('scare'));
-element('m-obst').addEventListener('click', () => setMode('obst'));
-const panelBody = element('body'), collapse = element<HTMLButtonElement>('collapse');
-collapse.addEventListener('click', () => {
+element("m-scare").addEventListener("click", () => setMode("scare"));
+element("m-obst").addEventListener("click", () => setMode("obst"));
+const panelBody = element("body"),
+  collapse = element<HTMLButtonElement>("collapse");
+collapse.addEventListener("click", () => {
   panelBody.hidden = !panelBody.hidden;
-  collapse.setAttribute('aria-expanded', String(!panelBody.hidden));
-  collapse.textContent = panelBody.hidden ? 'Mostrar' : 'Ocultar';
+  collapse.setAttribute("aria-expanded", String(!panelBody.hidden));
+  collapse.textContent = panelBody.hidden ? "Mostrar" : "Ocultar";
 });
-canvas.addEventListener('pointerdown', event => {
+canvas.addEventListener("pointerdown", (event) => {
   const p = renderer.world(event.clientX, event.clientY);
-  if (state.mode === 'obst') scene.toggleObstacle(p.x, p.y);
-  else scene.scare(p.x, p.y);
+  if (state.mode === "obst") scene.toggleObstacle(p.x, p.y);
+  else scene.scareAt(p.x, p.y);
   renderer.invalidate();
 });
-document.addEventListener('visibilitychange', () => { last = 0; accumulator = 0; statsTime = 0; frames = 0; });
-new ResizeObserver(() => renderer.resize()).observe(canvas);
+document.addEventListener("visibilitychange", () => {
+  last = 0;
+  accumulator = 0;
+  statsTime = 0;
+  frames = 0;
+});
+new ResizeObserver(() => {
+  const size = renderer.resize();
+  scene.resize(size.width, size.height);
+}).observe(canvas);
 
 function frame(now: number) {
   const realElapsed = last ? (now - last) / 1000 : 0;
@@ -89,19 +143,27 @@ function frame(now: number) {
   if (!document.hidden) {
     if (!state.paused) {
       accumulator += elapsed;
-      while (accumulator >= 1 / 60) { scene.step(1 / 60); accumulator -= 1 / 60; }
+      while (accumulator >= 1 / 60) {
+        meanSpeed = scene.step();
+        accumulator -= 1 / 60;
+      }
     }
-    meanSpeed = renderer.draw(scene, state.trails, state.paused, elapsed);
-    frames++; statsTime += realElapsed;
+    renderer.draw(scene, state.trails, state.paused, elapsed);
+    frames++;
+    statsTime += realElapsed;
     if (statsTime >= 0.5) {
       speed.textContent = meanSpeed.toFixed(1);
-      speed.setAttribute('aria-label', `${meanSpeed.toFixed(1)} unidades por segundo`);
+      speed.setAttribute(
+        "aria-label",
+        `${meanSpeed.toFixed(1)} píxeles por paso`,
+      );
       fps.textContent = String(Math.round(frames / statsTime));
-      statsTime = 0; frames = 0;
+      statsTime = 0;
+      frames = 0;
     }
   }
   requestAnimationFrame(frame);
 }
-scene.toggleObstacle(-45, 0); scene.toggleObstacle(65, 30);
-renderer.resize(); updateButtons(); setMode('scare');
+updateButtons();
+setMode("scare");
 requestAnimationFrame(frame);

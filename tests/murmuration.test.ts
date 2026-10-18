@@ -1,81 +1,108 @@
-import { expect, test } from 'bun:test';
-import { Murmuration, FIELD_BOUNDS } from '../src/murmuration.ts';
+import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import { Murmuration } from "../src/murmuration.ts";
+import { SeededRandom } from "../src/random.ts";
 
-test('species counts change independently and settings preserve positions', () => {
-  const scene = new Murmuration([8, 3, 2]);
-  const before = scene.snapshot();
-  scene.configure({ wind: 0.5, cohesion: 2 });
-  expect(scene.snapshot()).toEqual(before);
-  scene.setCount(0, 12);
-  expect(scene.snapshot().filter(b => b.species !== 0)).toEqual(before.filter(b => b.species !== 0));
-  expect(new Set(scene.snapshot().map(b => b.id)).size).toBe(17);
-});
+const create = (counts = [8, 3, 1], width = 1280, height = 720) => {
+  const random = new SeededRandom(42);
+  return new Murmuration(width, height, counts, () => random.next());
+};
 
-test('environment is detached and empty scenes can advance with a hawk', () => {
-  const scene = new Murmuration([0, 0, 0]);
-  scene.setHawk(true); scene.scare(0, 0); scene.toggleObstacle(0, 0);
-  const state = scene.environment(); state.obstacles[0]!.x = 99; state.hawk!.position.x = 99;
-  expect(scene.environment().obstacles[0]!.x).toBe(0);
-  expect(scene.environment().hawk!.position.x).toBe(-160);
-  scene.step(1);
-  expect(scene.environment().alarm).toBeNull();
-  scene.clearObstacles(); expect(scene.environment().obstacles).toEqual([]);
-  scene.setHawk(false); expect(scene.environment().hawk).toBeNull();
-});
+// Execute the supplied reference arithmetic with the same random stream.
+// The HTML is used strictly as a test fixture, never loaded into the viewer.
+function originalTrajectory(counts = [8, 3, 1], width = 1280, height = 720) {
+  const html = readFileSync(
+    new URL("./fixtures/original.html", import.meta.url),
+    "utf8",
+  );
+  const original = html
+    .slice(html.indexOf("  const P ="), html.indexOf("  function drawBirds"))
+    .replace(
+      "const counts = [450, 90, 40]",
+      `const counts = ${JSON.stringify(counts)}`,
+    );
+  const random = new SeededRandom(42);
+  const math = Object.create(Math);
+  math.random = () => random.next();
+  return runInNewContext(
+    `(() => {
+    let W = ${width}, H = ${height};
+    ${original}
+    syncCounts();
+    obstacles = [{x: W*.38, y:H*.45, r:38}, {x:W*.66,y:H*.32,r:30}];
+    const frames = [];
+    for (let frame=0;frame<120;frame++) {
+      if (frame===10) { P.wind=.5; P.coh=1.2; }
+      if (frame===20) scare={x:W*.4,y:H*.35,k:1};
+      if (frame===30) { state.hawk=true; hawk.x=Math.random()<.5?-10:W+10; hawk.y=H*.2; hawk.vx=0; hawk.vy=0; }
+      const speed=step();
+      if ([0, 20, 60, 119].includes(frame)) frames.push(JSON.parse(JSON.stringify({birds,obstacles,scare,hawk:state.hawk?hawk:null,speed})));
+    }
+    return frames;
+  })()`,
+    { Math: math },
+  );
+}
 
-test('wind, alarm and predator affect reproducible finite trajectories', () => {
-  const a = new Murmuration([10, 5, 3]), b = new Murmuration([10, 5, 3]);
-  a.configure({ wind: 1 }); b.configure({ wind: 1 });
-  a.scare(0, 0); b.scare(0, 0); a.setHawk(true); b.setHawk(true);
-  a.scatter(); b.scatter();
-  a.step(1); b.step(1);
-  expect(a.snapshot()).toEqual(b.snapshot());
-  const baseline = new Murmuration([10, 5, 3]); baseline.step(1);
-  expect(a.snapshot()).not.toEqual(baseline.snapshot());
-  for (const bird of a.snapshot()) for (const axis of ['x', 'y', 'z'] as const) {
-    expect(Number.isFinite(bird.velocity[axis])).toBe(true);
-    expect(Math.abs(bird.position[axis])).toBeLessThanOrEqual(FIELD_BOUNDS[axis]);
+test("matches original trajectories exactly in sparse and dense flocks", () => {
+  for (const [counts, width, height] of [
+    [[8, 3, 1], 1280, 720],
+    [[60, 15, 5], 640, 480],
+  ] as const) {
+    const expected = originalTrajectory([...counts], width, height);
+    const scene = create([...counts], width, height);
+    const actual = [];
+    for (let frame = 0; frame < 120; frame++) {
+      if (frame === 10) scene.configure({ wind: 0.5, coh: 1.2 });
+      if (frame === 20) scene.scareAt(width * 0.4, height * 0.35);
+      if (frame === 30) scene.setHawk(true);
+      const speed = scene.step();
+      if ([0, 20, 60, 119].includes(frame))
+        actual.push({ ...scene.snapshot(), speed });
+    }
+    expect(actual).toEqual(expected);
   }
 });
 
-test('validates scene parameters and rejects invalid counts and input coordinates', () => {
-  const scene = new Murmuration([0, 0, 0]);
+test("count changes retain existing birds and snapshots are detached", () => {
+  const scene = create();
+  const first = scene.view().birds[0];
+  scene.setCount(0, 10);
+  expect(scene.view().birds[0]).toBe(first);
+  expect(scene.view().birds.length).toBe(14);
+  const copy = scene.snapshot();
+  copy.birds[0]!.x = 999;
+  expect(scene.view().birds[0]!.x).not.toBe(999);
+  scene.setCount(1, 0);
+  expect(scene.view().birds.filter((b) => b.sp === 1)).toEqual([]);
+});
+
+test("obstacles, empty flocks, resize and scatter remain functional", () => {
+  const scene = create([0, 0, 0]);
+  scene.clearObstacles();
+  scene.toggleObstacle(300, 200);
+  expect(scene.view().obstacles.length).toBe(1);
+  scene.toggleObstacle(300, 200);
+  expect(scene.view().obstacles.length).toBe(0);
+  scene.setHawk(true);
+  expect(scene.step()).toBe(0);
+  scene.setHawk(false);
+  expect(scene.view().hawk).toBeNull();
+  scene.resize(800, 600);
+  scene.setCount(0, 1);
+  const before = scene.snapshot().birds[0]!;
+  scene.scatter();
+  expect(scene.view().birds[0]!.vx).not.toBe(before.vx);
+});
+
+test("rejects invalid public input", () => {
+  const scene = create();
+  expect(() => scene.configure({ spd: 0 })).toThrow();
   expect(() => scene.configure({ wind: NaN })).toThrow();
-  expect(() => scene.configure({ speed: 0 })).toThrow();
   expect(() => scene.setCount(0, 1201)).toThrow();
   expect(() => scene.setCount(3, 1)).toThrow();
-  expect(() => scene.scare(Infinity, 0)).toThrow();
+  expect(() => scene.resize(0, 720)).toThrow();
+  expect(() => scene.scareAt(Infinity, 0)).toThrow();
   expect(() => scene.toggleObstacle(0, NaN)).toThrow();
-  expect(() => scene.step(-1)).toThrow();
-});
-
-test('an obstacle at a bird position pushes it out and can be removed by another tap', () => {
-  const scene = new Murmuration([1, 0, 0]);
-  const p = scene.snapshot()[0]!.position;
-  scene.toggleObstacle(p.x, p.y);
-  scene.step(1 / 60);
-  const after = scene.snapshot()[0]!.position;
-  expect(Math.hypot(after.x - p.x, after.y - p.y)).toBeGreaterThanOrEqual(11 - 1e-10);
-  scene.toggleObstacle(p.x, p.y);
-  expect(scene.environment().obstacles).toEqual([]);
-});
-
-test('wind and alarm each change the trajectory by themselves', () => {
-  const baseline = new Murmuration([10, 0, 0]); baseline.step(0.2);
-  for (const apply of [
-    (scene: Murmuration) => scene.configure({ wind: 1 }),
-    (scene: Murmuration) => { const p = scene.snapshot()[0]!.position; scene.scare(p.x, p.y); },
-  ]) {
-    const scene = new Murmuration([10, 0, 0]);
-    apply(scene); scene.step(0.2);
-    expect(scene.snapshot()).not.toEqual(baseline.snapshot());
-  }
-});
-
-test('a hunting hawk changes the flock trajectory after approaching it', () => {
-  const hunted = new Murmuration([10, 0, 0]);
-  const baseline = new Murmuration([10, 0, 0]);
-  hunted.setHawk(true);
-  for (let i = 0; i < 5; i++) { hunted.step(1); baseline.step(1); }
-  expect(hunted.snapshot()).not.toEqual(baseline.snapshot());
 });

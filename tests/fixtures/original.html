@@ -1,0 +1,446 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Murmullo de Estorninos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed dusk sky canvas; a field-notebook control card floats bottom-left (bottom sheet on phones). Single deliberate dusk look. */
+:root {
+  --sky-top: #1d2440;
+  --ink: #f3ece4;
+  --ink-dim: #c9bdb4;
+  --card: rgba(24, 22, 34, 0.8);
+  --line: rgba(243, 236, 228, 0.16);
+  --accent: #f2b56b;
+  --hawk: #ff6b57;
+  --f-display: "Young Serif", Georgia, "Times New Roman", serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--sky-top); color: var(--ink); font-family: var(--f-body); overflow: hidden; }
+#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; }
+
+.head {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 18px);
+  left: max(16px, env(safe-area-inset-left, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  pointer-events: none;
+}
+.head h1 { margin: 0; font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 4vw, 44px); line-height: 1; letter-spacing: -0.01em; text-wrap: balance; }
+.head p { margin: 6px 0 0; color: var(--ink-dim); font-size: 13px; max-width: 42ch; }
+.tally { font-family: var(--f-mono); font-size: 12px; color: var(--ink-dim); text-align: right; font-variant-numeric: tabular-nums; line-height: 1.6; white-space: nowrap; }
+.tally b { color: var(--ink); font-weight: 500; }
+
+.panel {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  width: min(330px, calc(100vw - 32px));
+  max-height: calc(100% - 140px);
+  overflow-y: auto;
+  background: var(--card);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px 16px 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.panel-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+h2, h3 { margin: 0; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); }
+h3 { padding-top: 10px; border-top: 1px solid var(--line); }
+.toggle { background: none; border: 1px solid var(--line); color: var(--ink); font: 500 12px var(--f-body); padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+.toggle:hover { border-color: var(--accent); }
+#body { display: flex; flex-direction: column; gap: 12px; }
+.controls { display: grid; gap: 10px; }
+.ctl { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; }
+.ctl label { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.ctl label small { color: var(--ink-dim); font-size: 11px; }
+.ctl output { font-family: var(--f-mono); font-size: 12px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+.sw { width: 10px; height: 10px; border-radius: 50%; flex: none; border: 1px solid rgba(243,236,228,.5); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { flex: 1 1 auto; background: rgba(243, 236, 228, 0.06); border: 1px solid var(--line); color: var(--ink); font: 500 12px var(--f-body); padding: 8px 10px; border-radius: 4px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--accent); color: #1d1a22; border-color: var(--accent); }
+.btn.hawk[aria-pressed="true"] { background: var(--hawk); border-color: var(--hawk); }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { flex: 1; background: none; border: 0; color: var(--ink); font: 500 12px var(--f-body); padding: 7px 8px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #1d1a22; }
+.hint { margin: 0; font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (max-width: 560px) {
+  .head p { display: none; }
+  .panel { width: auto; right: max(16px, env(safe-area-inset-right, 0px)); max-height: 52%; }
+  .controls { grid-template-columns: 1fr 1fr; }
+}
+</style>
+
+<canvas id="sky" aria-label="Bandada de aves simulada"></canvas>
+
+<header class="head">
+  <div>
+    <h1>Murmullo de Estorninos</h1>
+    <p>Cada ave sigue tres reglas con sus siete vecinas más cercanas de la misma especie: no chocar, alinearse y no quedar sola. La forma de cada bandada sale de ahí.</p>
+  </div>
+  <div class="tally">
+    <div><b id="t-count">0</b> aves</div>
+    <div>vel. media <b id="t-speed">0</b></div>
+    <div><b id="t-fps">0</b> fps</div>
+  </div>
+</header>
+
+<section class="panel" id="panel">
+  <div class="panel-top">
+    <h2>Libreta de campo</h2>
+    <button class="toggle" id="collapse" aria-expanded="true" aria-controls="body">Ocultar</button>
+  </div>
+  <div id="body">
+    <div class="controls">
+      <div class="ctl"><label for="sep">Separación</label><output id="sep-o"></output><input id="sep" type="range" min="0" max="3" step="0.05" value="1.6"></div>
+      <div class="ctl"><label for="ali">Alineación</label><output id="ali-o"></output><input id="ali" type="range" min="0" max="3" step="0.05" value="1.0"></div>
+      <div class="ctl"><label for="coh">Cohesión</label><output id="coh-o"></output><input id="coh" type="range" min="0" max="3" step="0.05" value="0.9"></div>
+      <div class="ctl"><label for="spd">Velocidad</label><output id="spd-o"></output><input id="spd" type="range" min="1" max="7" step="0.1" value="3.4"></div>
+      <div class="ctl"><label for="wind">Viento</label><output id="wind-o"></output><input id="wind" type="range" min="-1" max="1" step="0.05" value="0"></div>
+    </div>
+
+    <h3>Especies</h3>
+    <div class="controls">
+      <div class="ctl"><label for="n0"><span class="sw" style="background:#120e16"></span>Estornino <small>bandada densa</small></label><output id="n0-o"></output><input id="n0" type="range" min="0" max="1200" step="10" value="450"></div>
+      <div class="ctl"><label for="n1"><span class="sw" style="background:#22305e"></span>Golondrina <small>rápida, suelta</small></label><output id="n1-o"></output><input id="n1" type="range" min="0" max="400" step="5" value="90"></div>
+      <div class="ctl"><label for="n2"><span class="sw" style="background:#e8ddd2"></span>Paloma <small>lenta, unida</small></label><output id="n2-o"></output><input id="n2" type="range" min="0" max="200" step="5" value="40"></div>
+    </div>
+
+    <h3>Al tocar el cielo</h3>
+    <div class="seg" role="group" aria-label="Acción al tocar el cielo">
+      <button id="m-scare" aria-pressed="true">Espantar</button>
+      <button id="m-obst" aria-pressed="false">Poner obstáculo</button>
+    </div>
+
+    <div class="row">
+      <button class="btn hawk" id="hawk" aria-pressed="false">Halcón</button>
+      <button class="btn" id="trails" aria-pressed="true">Estelas</button>
+      <button class="btn" id="pause" aria-pressed="false">Pausa</button>
+      <button class="btn" id="scatter">Dispersar</button>
+      <button class="btn" id="clear">Quitar obstáculos</button>
+    </div>
+    <p class="hint" id="hint">Tocá el cielo para espantar a las aves. Las especies no se mezclan, pero sí se esquivan entre sí.</p>
+  </div>
+</section>
+
+<script>
+(() => {
+  const cv = document.getElementById('sky');
+  const ctx = cv.getContext('2d');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let W = 0, H = 0, DPR = 1;
+
+  const P = { sep: 1.6, ali: 1.0, coh: 0.9, spd: 3.4, wind: 0 };
+  const SPECIES = [
+    { name: 'Estornino',  color: 'rgba(18,14,22,0.92)', size: 4.2, speed: 1.0,  sep: 1.0, ali: 1.0, coh: 1.0, shape: 'tri' },
+    { name: 'Golondrina', color: 'rgba(34,48,94,0.95)', size: 4.6, speed: 1.4,  sep: 0.8, ali: 0.55, coh: 0.45, shape: 'fork' },
+    { name: 'Paloma',     color: 'rgba(232,221,210,0.95)', size: 5.8, speed: 0.72, sep: 1.6, ali: 1.2, coh: 1.5, shape: 'tri' },
+  ];
+  const counts = [450, 90, 40];
+  const state = { hawk: false, trails: true, paused: false, mode: 'scare' };
+  const NEIGH = 7, VIEW = 60, SEP_R = 16;
+
+  let birds = [];
+  let obstacles = [];
+  let scare = null;
+  const hawk = { x: 0, y: 0, vx: 2, vy: 0 };
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    skyGrad = null;
+    paintSky(1);
+  }
+
+  let skyGrad = null;
+  function paintSky(alpha) {
+    if (!skyGrad) {
+      skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+      skyGrad.addColorStop(0, '#1d2440');
+      skyGrad.addColorStop(0.55, '#6b4e6e');
+      skyGrad.addColorStop(1, '#d98a5f');
+    }
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  function makeBird(sp) {
+    const a = Math.random() * Math.PI * 2, s = P.spd * SPECIES[sp].speed;
+    const cx = W * (0.3 + sp * 0.2), cy = H * (0.3 + sp * 0.08);
+    return { sp, x: cx + (Math.random() - .5) * W * .35, y: cy + (Math.random() - .5) * H * .25,
+             vx: Math.cos(a) * s, vy: Math.sin(a) * s, ax: 0, ay: 0 };
+  }
+  function syncCounts() {
+    const bySp = [[], [], []];
+    for (const b of birds) bySp[b.sp].push(b);
+    for (let s = 0; s < 3; s++) {
+      while (bySp[s].length < counts[s]) bySp[s].push(makeBird(s));
+      bySp[s].length = counts[s];
+    }
+    birds = bySp[0].concat(bySp[1], bySp[2]);
+  }
+
+  const CELL = VIEW;
+  const grid = new Map();
+  function buildGrid() {
+    grid.clear();
+    for (let i = 0; i < birds.length; i++) {
+      const b = birds[i];
+      const k = ((b.x / CELL) | 0) * 7919 + ((b.y / CELL) | 0);
+      let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(i);
+    }
+  }
+
+  const nIdx = new Int32Array(NEIGH), nD = new Float32Array(NEIGH);
+  function step() {
+    buildGrid();
+    const margin = 80;
+    const alarmed = !!scare || state.hawk;
+    let sumS = 0;
+    for (let i = 0; i < birds.length; i++) {
+      const b = birds[i], S = SPECIES[b.sp];
+      const maxF = 0.08 * (P.spd / 3.4) * S.speed;
+      let n = 0, sx = 0, sy = 0;
+      const gx = (b.x / CELL) | 0, gy = (b.y / CELL) | 0;
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+        const c = grid.get((gx + dx) * 7919 + gy + dy); if (!c) continue;
+        for (const j of c) {
+          if (j === i) continue;
+          const o = birds[j], ddx = o.x - b.x, ddy = o.y - b.y, d = ddx * ddx + ddy * ddy;
+          if (d > VIEW * VIEW) continue;
+          if (o.sp !== b.sp) {
+            // other species: only keep distance
+            const r = SEP_R * 1.4;
+            if (d < r * r && d > 0) { const dd = Math.sqrt(d); sx -= ddx / dd / dd * 1.5; sy -= ddy / dd / dd * 1.5; }
+            continue;
+          }
+          if (n < NEIGH) { nIdx[n] = j; nD[n] = d; n++; }
+          else { let w = 0; for (let k = 1; k < NEIGH; k++) if (nD[k] > nD[w]) w = k; if (d < nD[w]) { nIdx[w] = j; nD[w] = d; } }
+        }
+      }
+      let axv = 0, ayv = 0, cx = 0, cy = 0;
+      const sepR = SEP_R * (S.size / 4.2);
+      for (let k = 0; k < n; k++) {
+        const o = birds[nIdx[k]];
+        axv += o.vx; ayv += o.vy; cx += o.x; cy += o.y;
+        const d = Math.sqrt(nD[k]);
+        if (d < sepR && d > 0) { sx += (b.x - o.x) / d / d; sy += (b.y - o.y) / d / d; }
+      }
+      let fx = sx * 1.4 * P.sep * S.sep, fy = sy * 1.4 * P.sep * S.sep;
+      if (n) {
+        fx += (axv / n - b.vx) * 0.05 * P.ali * S.ali;
+        fy += (ayv / n - b.vy) * 0.05 * P.ali * S.ali;
+        fx += (cx / n - b.x) * 0.002 * P.coh * S.coh;
+        fy += (cy / n - b.y) * 0.002 * P.coh * S.coh;
+      }
+      if (b.x < margin) fx += (margin - b.x) * 0.004;
+      if (b.x > W - margin) fx -= (b.x - W + margin) * 0.004;
+      if (b.y < margin) fy += (margin - b.y) * 0.004;
+      if (b.y > H - margin * 1.6) fy -= (b.y - H + margin * 1.6) * 0.005;
+      fx += P.wind * 0.03;
+
+      let urgent = 0;
+      for (const ob of obstacles) {
+        // look slightly ahead so birds turn before reaching the obstacle
+        const px = b.x + b.vx * 8, py = b.y + b.vy * 8;
+        const dx = px - ob.x, dy = py - ob.y, d = Math.hypot(dx, dy) || 1;
+        const reach = ob.r + 45;
+        if (d < reach) {
+          const k = (1 - (d - ob.r) / 45);
+          fx += dx / d * 0.35 * Math.max(k, 0.2);
+          fy += dy / d * 0.35 * Math.max(k, 0.2);
+          urgent = 1;
+        }
+      }
+      if (scare) {
+        const dx = b.x - scare.x, dy = b.y - scare.y, d2 = dx * dx + dy * dy;
+        if (d2 < 22000) { const d = Math.sqrt(d2) + 1; fx += dx / d * 0.6 * scare.k; fy += dy / d * 0.6 * scare.k; }
+      }
+      if (state.hawk) {
+        const dx = b.x - hawk.x, dy = b.y - hawk.y, d2 = dx * dx + dy * dy;
+        if (d2 < 14000) { const d = Math.sqrt(d2) + 1; fx += dx / d * 0.5; fy += dy / d * 0.5; }
+      }
+      const fm = Math.hypot(fx, fy);
+      const lim = alarmed || urgent ? maxF * 4 : maxF;
+      if (fm > lim) { fx = fx / fm * lim; fy = fy / fm * lim; }
+      b.ax = fx; b.ay = fy;
+    }
+    for (const b of birds) {
+      const S = SPECIES[b.sp], base = P.spd * S.speed;
+      b.vx += b.ax; b.vy += b.ay;
+      let s = Math.hypot(b.vx, b.vy);
+      const cap = base * (alarmed ? 1.5 : 1), minS = base * 0.55;
+      if (s > cap) { b.vx *= cap / s; b.vy *= cap / s; s = cap; }
+      if (s < minS) { b.vx *= minS / (s || 1); b.vy *= minS / (s || 1); s = minS; }
+      b.x += b.vx; b.y += b.vy;
+      // hard push out of obstacles
+      for (const ob of obstacles) {
+        const dx = b.x - ob.x, dy = b.y - ob.y, d = Math.hypot(dx, dy);
+        if (d < ob.r + 2) { const k = (ob.r + 2) / (d || 1); b.x = ob.x + dx * k; b.y = ob.y + dy * k; }
+      }
+      if (b.x < -20) b.x = W + 20; else if (b.x > W + 20) b.x = -20;
+      if (b.y < -20) b.y = -19; else if (b.y > H + 20) b.y = H + 19;
+      sumS += s;
+    }
+    if (scare) { scare.k *= 0.94; if (scare.k < 0.05) scare = null; }
+    if (state.hawk) stepHawk();
+    return sumS / (birds.length || 1);
+  }
+
+  function stepHawk() {
+    let best = null, bd = Infinity;
+    for (let i = 0; i < birds.length; i += 4) { const b = birds[i], d = (b.x - hawk.x) ** 2 + (b.y - hawk.y) ** 2; if (d < bd) { bd = d; best = b; } }
+    if (best) {
+      const dx = best.x - hawk.x, dy = best.y - hawk.y, d = Math.hypot(dx, dy) || 1;
+      hawk.vx += dx / d * 0.18; hawk.vy += dy / d * 0.18;
+    }
+    for (const ob of obstacles) {
+      const dx = hawk.x - ob.x, dy = hawk.y - ob.y, d = Math.hypot(dx, dy) || 1;
+      if (d < ob.r + 40) { hawk.vx += dx / d * 0.4; hawk.vy += dy / d * 0.4; }
+    }
+    const s = Math.hypot(hawk.vx, hawk.vy), cap = P.spd * 1.25;
+    if (s > cap) { hawk.vx *= cap / s; hawk.vy *= cap / s; }
+    hawk.x += hawk.vx; hawk.y += hawk.vy;
+  }
+
+  function drawBirds(sp) {
+    const S = SPECIES[sp], L = S.size, Wd = S.size * 0.38;
+    ctx.fillStyle = S.color;
+    ctx.beginPath();
+    for (const b of birds) {
+      if (b.sp !== sp) continue;
+      const s = Math.hypot(b.vx, b.vy) || 1, ux = b.vx / s, uy = b.vy / s;
+      ctx.moveTo(b.x + ux * L, b.y + uy * L);
+      if (S.shape === 'fork') {
+        // swept wings with a notched tail
+        ctx.lineTo(b.x - ux * L - uy * Wd * 1.6, b.y - uy * L + ux * Wd * 1.6);
+        ctx.lineTo(b.x - ux * L * 0.35, b.y - uy * L * 0.35);
+        ctx.lineTo(b.x - ux * L + uy * Wd * 1.6, b.y - uy * L - ux * Wd * 1.6);
+      } else {
+        ctx.lineTo(b.x - ux * L - uy * Wd, b.y - uy * L + ux * Wd);
+        ctx.lineTo(b.x - ux * L + uy * Wd, b.y - uy * L - ux * Wd);
+      }
+      ctx.closePath();
+    }
+    ctx.fill();
+  }
+
+  function draw() {
+    if (state.trails && !reduce) paintSky(0.28); else paintSky(1);
+    for (const ob of obstacles) {
+      ctx.fillStyle = '#1a1420';
+      ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(242,181,107,0.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    for (let sp = 0; sp < 3; sp++) drawBirds(sp);
+    if (state.hawk) {
+      const s = Math.hypot(hawk.vx, hawk.vy) || 1, ux = hawk.vx / s, uy = hawk.vy / s;
+      ctx.fillStyle = '#ff6b57';
+      ctx.beginPath();
+      ctx.moveTo(hawk.x + ux * 11, hawk.y + uy * 11);
+      ctx.lineTo(hawk.x - ux * 8 - uy * 9, hawk.y - uy * 8 + ux * 9);
+      ctx.lineTo(hawk.x - ux * 3, hawk.y - uy * 3);
+      ctx.lineTo(hawk.x - ux * 8 + uy * 9, hawk.y - uy * 8 - ux * 9);
+      ctx.closePath(); ctx.fill();
+    }
+    if (scare) {
+      ctx.strokeStyle = `rgba(242, 181, 107, ${scare.k * 0.6})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(scare.x, scare.y, 150 * (1 - scare.k) + 10, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+
+  const tC = document.getElementById('t-count'), tS = document.getElementById('t-speed'), tF = document.getElementById('t-fps');
+  let last = performance.now(), frames = 0, acc = 0, avgS = 0;
+  function loop(now) {
+    frames++; acc += now - last; last = now;
+    if (!state.paused) avgS = step();
+    draw();
+    if (acc > 500) {
+      tF.textContent = Math.round(frames * 1000 / acc);
+      tC.textContent = birds.length;
+      tS.textContent = avgS.toFixed(2);
+      frames = 0; acc = 0;
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // controls
+  const fmt = { sep: v => v.toFixed(2), ali: v => v.toFixed(2), coh: v => v.toFixed(2), spd: v => v.toFixed(1), wind: v => (v > 0 ? '→ ' : v < 0 ? '← ' : '') + Math.abs(v).toFixed(2) };
+  for (const k of Object.keys(P)) {
+    const el = document.getElementById(k), out = document.getElementById(k + '-o');
+    const upd = () => { P[k] = parseFloat(el.value); out.textContent = fmt[k](P[k]); };
+    el.addEventListener('input', upd); upd();
+  }
+  for (let s = 0; s < 3; s++) {
+    const el = document.getElementById('n' + s), out = document.getElementById('n' + s + '-o');
+    const upd = () => { counts[s] = parseInt(el.value, 10); out.textContent = counts[s]; if (W) syncCounts(); };
+    el.addEventListener('input', upd); upd();
+  }
+  function toggle(id, key, after) {
+    const b = document.getElementById(id);
+    b.addEventListener('click', () => { state[key] = !state[key]; b.setAttribute('aria-pressed', state[key]); after && after(); });
+  }
+  toggle('hawk', 'hawk', () => { if (state.hawk) { hawk.x = Math.random() < .5 ? -10 : W + 10; hawk.y = H * 0.2; hawk.vx = 0; hawk.vy = 0; } });
+  toggle('trails', 'trails');
+  toggle('pause', 'pause', () => { document.getElementById('pause').textContent = state.paused ? 'Seguir' : 'Pausa'; });
+  document.getElementById('scatter').addEventListener('click', () => {
+    for (const b of birds) { const a = Math.random() * Math.PI * 2, s = P.spd * SPECIES[b.sp].speed * 1.4; b.vx = Math.cos(a) * s; b.vy = Math.sin(a) * s; }
+  });
+  document.getElementById('clear').addEventListener('click', () => { obstacles = []; });
+
+  const mScare = document.getElementById('m-scare'), mObst = document.getElementById('m-obst'), hint = document.getElementById('hint');
+  function setMode(m) {
+    state.mode = m;
+    mScare.setAttribute('aria-pressed', m === 'scare');
+    mObst.setAttribute('aria-pressed', m === 'obst');
+    hint.textContent = m === 'obst'
+      ? 'Tocá el cielo para poner un obstáculo. Tocá uno existente para quitarlo. Las aves lo rodean sin chocar.'
+      : 'Tocá el cielo para espantar a las aves. Las especies no se mezclan, pero sí se esquivan entre sí.';
+  }
+  mScare.addEventListener('click', () => setMode('scare'));
+  mObst.addEventListener('click', () => setMode('obst'));
+
+  const col = document.getElementById('collapse'), body = document.getElementById('body');
+  col.addEventListener('click', () => {
+    const open = !body.hidden;
+    body.hidden = open;
+    col.textContent = open ? 'Mostrar' : 'Ocultar';
+    col.setAttribute('aria-expanded', String(!open));
+  });
+
+  cv.addEventListener('pointerdown', e => {
+    const x = e.clientX, y = e.clientY;
+    if (state.mode === 'obst') {
+      const hit = obstacles.findIndex(o => Math.hypot(o.x - x, o.y - y) < o.r);
+      if (hit >= 0) obstacles.splice(hit, 1);
+      else if (obstacles.length < 20) obstacles.push({ x, y, r: 26 + Math.random() * 22 });
+    } else {
+      scare = { x, y, k: 1 };
+    }
+  });
+
+  window.addEventListener('resize', resize);
+  resize();
+  syncCounts();
+  // start with two example obstacles so the behaviour is visible right away
+  obstacles = [{ x: W * 0.38, y: H * 0.45, r: 38 }, { x: W * 0.66, y: H * 0.32, r: 30 }];
+  requestAnimationFrame(t => { last = t; loop(t); });
+})();
+</script>
+
+</body></html>
