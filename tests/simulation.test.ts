@@ -36,3 +36,14 @@ test('handles empty flocks and validates inputs',()=>{
   const flock=new StarlingSimulation();
   for(const dt of [-1,2,NaN,Infinity]) expect(()=>flock.step(dt)).toThrow();
 });
+
+test('preserves the trajectory recorded before the object-oriented refactor', async () => {
+  const expected = (await import('./fixtures/trajectory.json')).default;
+  const flock = new StarlingSimulation({ count: 12, seed: 42, bounds: { x: 12, y: 10, z: 12 } });
+  const actual = [flock.snapshot()];
+  for (const dt of [1 / 60, 0.2, 1, 0, 0.03]) {
+    flock.step(dt);
+    actual.push(flock.snapshot());
+  }
+  expect(actual).toEqual(expected);
+});

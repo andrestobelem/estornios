@@ -46,3 +46,9 @@ Las distancias usan unidades arbitrarias consistentes y el tiempo se expresa en 
 Aproximación Boids con separación, alineación y cohesión. La separación considera todas las aves dentro de su radio; alineación y cohesión usan los vecinos más cercanos dentro del radio de percepción. Hay un giro hacia el interior cerca de los límites y reflexión en la pared como respaldo.
 
 No es un modelo aerodinámico ni una validación biológica del vuelo real: no incluye alas, viento, depredadores ni garantía de ausencia de colisiones. El límite de aceleración corresponde a la fuerza de dirección; el ajuste de rapidez mínima y la reflexión pueden producir cambios de velocidad adicionales. La búsqueda espacial puede degradarse con bandadas muy densas.
+
+## Organización del código
+
+`StarlingSimulation` coordina la inicialización y los pasos de tiempo. Compone un `SeededRandom` para generar el estado inicial, una `SimulationConfiguration` para validar los parámetros y un `FlockingBehavior` para calcular las fuerzas. En cada paso construye un `SpatialGrid` que consulta vecinos sobre el estado anterior. Los contratos `Bird`, `Vector3` y `SimulationOptions` siguen disponibles desde `index.ts`; las operaciones vectoriales son funciones puras internas.
+
+La prueba de regresión compara una trayectoria con datos capturados antes de la refactorización para verificar que la reorganización conserva los resultados.
