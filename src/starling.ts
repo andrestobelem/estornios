@@ -1,13 +1,18 @@
-import type { Bird, SimulationOptions, Vector3 } from './types.ts';
+import type { Bird, Vector3 } from './types.ts';
 import { add, mul, limit, unit, norm, axes } from './vector.ts';
 
-export type FlightLimits = Pick<SimulationOptions, 'bounds' | 'minSpeed' | 'maxSpeed' | 'maxAcceleration'>;
+import { validateFlightLimits, validateVector } from './validation.ts';
+import type { FlightLimits } from './validation.ts';
+export type { FlightLimits } from './validation.ts';
 
 /** An individual bird with encapsulated state and immutable movement updates. */
 export class Starling {
   private readonly state: Bird;
 
   constructor(state: Bird) {
+    if (!Number.isSafeInteger(state.id) || state.id < 0) throw new RangeError('id must be a nonnegative safe integer');
+    validateVector(state.position, 'position');
+    validateVector(state.velocity, 'velocity');
     this.state = { id: state.id, position: { ...state.position }, velocity: { ...state.velocity } };
   }
 
@@ -20,6 +25,8 @@ export class Starling {
   /** Returns the next bird, leaving this frame's state intact for neighbor queries. */
   advance(acceleration: Vector3, dt: number, limits: FlightLimits): Starling {
     if (!Number.isFinite(dt) || dt < 0 || dt > 1) throw new RangeError('dt must be between 0 and 1');
+    validateVector(acceleration, 'acceleration');
+    validateFlightLimits(limits);
     if (dt === 0) return new Starling(this.state);
     let velocity = add(this.state.velocity, mul(limit(acceleration, limits.maxAcceleration), dt));
     velocity = mul(unit(velocity), Math.max(limits.minSpeed, Math.min(limits.maxSpeed, norm(velocity))));
