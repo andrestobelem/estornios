@@ -1,5 +1,7 @@
 # Murmullo de Estorninos
 
+[Sitio público para compartir](https://murmullo-estorninos.andrestobelem.chatgpt.site). Se abre sin iniciar sesión.
+
 Simulador interactivo basado directamente en el archivo **Murmullo de Estorninos.html** proporcionado como referencia. Conserva sus fórmulas 2D, parámetros, perfiles de especies, siluetas, cielo, controles y tamaños en píxeles.
 
 ```bash
@@ -61,3 +63,7 @@ El benchmark mide únicamente la física en Bun, sin renderizado: no representa 
 La búsqueda espacial reutiliza los buffers de celdas y comparte las listas de candidatos entre aves de la misma celda. Conserva el orden de recorrido y selección de vecinos de la referencia. El benchmark incluye la configuración inicial de 450 aves y reporta la mediana de cinco ejecuciones de 600 medios pasos, tras calentamiento.
 
 Al pausar, Canvas solo vuelve a dibujar cuando cambian la escena o el tamaño.
+
+## Publicación
+
+`bun run site:build` exporta una página autocontenida a `sites/murmullo-estorninos/dist/index.html`. Ese directorio es un checkout Git independiente, ignorado por este repositorio y sincronizado con Sites. La identidad persistida está en `sites/murmullo-estorninos/.openai/hosting.json`: `appgprj_6ad4f28ac4708191a464edfd96295840`. Para actualizar la publicación, reutilizar ese proyecto con la skill de Sites, sin crear otro.

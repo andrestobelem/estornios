@@ -12,6 +12,7 @@
   "scripts": {
     "start": "bun run index.ts",
     "view": "bun run scripts/viewer.ts",
-    "bench": "bun run scripts/benchmark.ts"
+    "bench": "bun run scripts/benchmark.ts",
+    "site:build": "bun run scripts/viewer.ts --export sites/murmullo-estorninos/dist/index.html"
   }
 }

@@ -32,3 +32,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Configuración de Finder (macOS)
 .DS_Store
+
+# Checkout independiente para publicar con Sites
+/sites/
