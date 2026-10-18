@@ -49,6 +49,6 @@ No es un modelo aerodinámico ni una validación biológica del vuelo real: no i
 
 ## Organización del código
 
-`StarlingSimulation` coordina la inicialización y los pasos de tiempo. Compone un `SeededRandom` para generar el estado inicial, una `SimulationConfiguration` para validar los parámetros y un `FlockingBehavior` para calcular las fuerzas. En cada paso construye un `SpatialGrid` que consulta vecinos sobre el estado anterior. Los contratos `Bird`, `Vector3` y `SimulationOptions` siguen disponibles desde `index.ts`; las operaciones vectoriales son funciones puras internas.
+`StarlingSimulation` coordina la inicialización y los pasos de tiempo. Cada ave es una instancia de `Starling`, que encapsula su estado y aplica aceleración, límites de rapidez y reflexión en los bordes mediante `advance()`. Este método devuelve una nueva instancia para conservar el estado anterior durante las consultas de vecinos. `snapshot()` entrega una copia de los datos del ave. Compone un `SeededRandom` para generar el estado inicial, una `SimulationConfiguration` para validar los parámetros y un `FlockingBehavior` para calcular las fuerzas. En cada paso construye un `SpatialGrid` que consulta vecinos sobre el estado anterior. Los contratos `Bird`, `Vector3` y `SimulationOptions` siguen disponibles desde `index.ts`; las operaciones vectoriales son funciones puras internas.
 
 La prueba de regresión compara una trayectoria con datos capturados antes de la refactorización para verificar que la reorganización conserva los resultados.
