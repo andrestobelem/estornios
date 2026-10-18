@@ -3,7 +3,7 @@ import { SeededRandom } from "../src/random.ts";
 
 // Same initial states and integration rate as the viewer; report the median to limit warmup noise.
 for (const counts of [
-  [300, 0, 0],
+  [450, 0, 0],
   [450, 90, 40],
   [1200, 400, 200],
 ]) {

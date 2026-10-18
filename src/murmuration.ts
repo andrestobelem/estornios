@@ -80,7 +80,7 @@ export class Murmuration {
   constructor(
     width = 1280,
     height = 720,
-    initialCounts: readonly number[] = [300, 0, 0],
+    initialCounts: readonly number[] = [450, 0, 0],
     random: () => number = Math.random,
   ) {
     if (![width, height].every((n) => Number.isFinite(n) && n > 0))

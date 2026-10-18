@@ -9,7 +9,7 @@ bun run view
 
 Abrir `http://127.0.0.1:3000/`. Otro puerto: `PORT=3001 bun run view`.
 
-El inicio usa **300 estorninos, sin otras especies ni obstáculos**.
+El inicio usa **450 estorninos, sin otras especies ni obstáculos**.
 
 ## Controles
 
@@ -36,7 +36,7 @@ El modelo anterior en 3D fue reemplazado por el modelo 2D de la referencia. Las 
 ```ts
 import { Murmuration } from './index.ts';
 
-const scene = new Murmuration(1280, 720, [300, 0, 0]);
+const scene = new Murmuration(1280, 720, [450, 0, 0]);
 scene.configure({ sep: 1.6, ali: 1, coh: 0.9, spd: 3.4, wind: 0 });
 const meanSpeed = scene.step(); // un paso físico, equivalente a 1/60 s
 const snapshot = scene.snapshot();
@@ -58,6 +58,6 @@ La prueba de regresión ejecuta las fórmulas del HTML original guardado en `tes
 
 El benchmark mide únicamente la física en Bun, sin renderizado: no representa los FPS del navegador. Las especies y el comportamiento son aproximaciones artísticas; no hay garantía de ausencia de colisiones ni modelo aerodinámico.
 
-La búsqueda espacial reutiliza los buffers de celdas y comparte las listas de candidatos entre aves de la misma celda. Conserva el orden de recorrido y selección de vecinos de la referencia. El benchmark incluye la configuración inicial de 300 aves y reporta la mediana de cinco ejecuciones de 600 medios pasos, tras calentamiento.
+La búsqueda espacial reutiliza los buffers de celdas y comparte las listas de candidatos entre aves de la misma celda. Conserva el orden de recorrido y selección de vecinos de la referencia. El benchmark incluye la configuración inicial de 450 aves y reporta la mediana de cinco ejecuciones de 600 medios pasos, tras calentamiento.
 
 Al pausar, Canvas solo vuelve a dibujar cuando cambian la escena o el tamaño.

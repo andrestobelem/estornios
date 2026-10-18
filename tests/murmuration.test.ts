@@ -101,9 +101,9 @@ test("rejects invalid public input", () => {
   expect(() => scene.scareAt(Infinity, 0)).toThrow();
 });
 
-test("defaults to 300 starlings", () => {
+test("defaults to 450 starlings", () => {
   const scene = new Murmuration();
-  expect(scene.view().birds.length).toBe(300);
+  expect(scene.view().birds.length).toBe(450);
   expect(scene.view().birds.every((b) => b.sp === 0)).toBe(true);
 });
 
