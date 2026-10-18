@@ -62,10 +62,6 @@ h3 { padding-top: 10px; border-top: 1px solid var(--line); }
 .btn:hover { border-color: var(--accent); }
 .btn[aria-pressed="true"] { background: var(--accent); color: #1d1a22; border-color: var(--accent); }
 .btn.hawk[aria-pressed="true"] { background: var(--hawk); border-color: var(--hawk); }
-.seg { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.seg button { flex: 1; background: none; border: 0; color: var(--ink); font: 500 12px var(--f-body); padding: 7px 8px; cursor: pointer; }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button[aria-pressed="true"] { background: var(--accent); color: #1d1a22; }
 .hint { margin: 0; font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -113,18 +109,11 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); ou
       <div class="ctl"><label for="n2"><span class="sw" style="background:#e8ddd2"></span>Paloma <small>lenta, unida</small></label><output id="n2-o"></output><input id="n2" type="range" min="0" max="200" step="5" value="0"></div>
     </div>
 
-    <h3>Al tocar el cielo</h3>
-    <div class="seg" role="group" aria-label="Acción al tocar el cielo">
-      <button id="m-scare" aria-pressed="true">Espantar</button>
-      <button id="m-obst" aria-pressed="false">Poner obstáculo</button>
-    </div>
-
     <div class="row">
       <button class="btn hawk" id="hawk" aria-pressed="false">Halcón</button>
       <button class="btn" id="trails" aria-pressed="true">Estelas</button>
       <button class="btn" id="pause" aria-pressed="false">Pausa</button>
       <button class="btn" id="scatter">Dispersar</button>
-      <button class="btn" id="clear">Quitar obstáculos</button>
     </div>
     <p class="hint" id="hint">Tocá el cielo para espantar a las aves. Las especies no se mezclan, pero sí se esquivan entre sí.</p>
   </div>

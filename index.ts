@@ -1,11 +1,5 @@
 export { Murmuration, SPECIES } from "./src/murmuration.ts";
-export type {
-  Parameters,
-  Species,
-  Obstacle,
-  Alarm,
-  Hawk,
-} from "./src/murmuration.ts";
+export type { Parameters, Species, Alarm, Hawk } from "./src/murmuration.ts";
 export { Starling } from "./src/starling.ts";
 export type { BirdState } from "./src/starling.ts";
 

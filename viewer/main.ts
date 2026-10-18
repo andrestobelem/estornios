@@ -18,7 +18,6 @@ const state = {
   paused: reducedMotion,
   trails: !reducedMotion,
   hawk: false,
-  mode: "scare",
 };
 const status = element("status");
 const count = element("t-count"),
@@ -99,23 +98,6 @@ element("scatter").addEventListener("click", () => {
   renderer.invalidate();
   status.textContent = "Bandadas dispersadas";
 });
-element("clear").addEventListener("click", () => {
-  scene.clearObstacles();
-  renderer.invalidate();
-  status.textContent = "Obstáculos retirados";
-});
-
-function setMode(mode: string) {
-  state.mode = mode;
-  element("m-scare").setAttribute("aria-pressed", String(mode === "scare"));
-  element("m-obst").setAttribute("aria-pressed", String(mode === "obst"));
-  element("hint").textContent =
-    mode === "obst"
-      ? "Tocá el cielo para poner un obstáculo. Tocá uno existente para quitarlo. Las aves intentan rodearlo."
-      : "Tocá el cielo para espantar a las aves. Cada especie se agrupa con sus vecinas y se aparta de las demás.";
-}
-element("m-scare").addEventListener("click", () => setMode("scare"));
-element("m-obst").addEventListener("click", () => setMode("obst"));
 const panelBody = element("body"),
   collapse = element<HTMLButtonElement>("collapse");
 collapse.addEventListener("click", () => {
@@ -125,8 +107,7 @@ collapse.addEventListener("click", () => {
 });
 canvas.addEventListener("pointerdown", (event) => {
   const p = renderer.world(event.clientX, event.clientY);
-  if (state.mode === "obst") scene.toggleObstacle(p.x, p.y);
-  else scene.scareAt(p.x, p.y);
+  scene.scareAt(p.x, p.y);
   renderer.invalidate();
 });
 document.addEventListener("visibilitychange", () => {
@@ -170,5 +151,4 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 updateButtons();
-setMode("scare");
 requestAnimationFrame(frame);

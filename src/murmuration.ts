@@ -18,11 +18,6 @@ export interface Species {
   coh: number;
   shape: string;
 }
-export interface Obstacle {
-  x: number;
-  y: number;
-  r: number;
-}
 export interface Alarm {
   x: number;
   y: number;
@@ -76,11 +71,8 @@ export class Murmuration {
   readonly setHawk: (enabled: boolean) => void;
   readonly scatter: () => void;
   readonly scareAt: (x: number, y: number) => void;
-  readonly toggleObstacle: (x: number, y: number) => void;
-  readonly clearObstacles: () => void;
   readonly view: () => {
     birds: readonly Readonly<BirdState>[];
-    obstacles: readonly Readonly<Obstacle>[];
     scare: Readonly<Alarm> | null;
     hawk: Readonly<Hawk> | null;
   };
@@ -113,7 +105,6 @@ export class Murmuration {
       SEP_R = 16;
 
     let birds: Starling[] = [];
-    let obstacles: Obstacle[] = [];
     let scare: Alarm | null = null;
     const hawk = { x: 0, y: 0, vx: 2, vy: 0 };
 
@@ -265,22 +256,6 @@ export class Murmuration {
         if (b.y > H - margin * 1.6) fy -= (b.y - H + margin * 1.6) * 0.005;
         fx += P.wind * 0.03;
 
-        let urgent = 0;
-        for (const ob of obstacles) {
-          // look slightly ahead so birds turn before reaching the obstacle
-          const px = b.x + b.vx * 8,
-            py = b.y + b.vy * 8;
-          const dx = px - ob.x,
-            dy = py - ob.y,
-            d = Math.hypot(dx, dy) || 1;
-          const reach = ob.r + 45;
-          if (d < reach) {
-            const k = 1 - (d - ob.r) / 45;
-            fx += (dx / d) * 0.35 * Math.max(k, 0.2);
-            fy += (dy / d) * 0.35 * Math.max(k, 0.2);
-            urgent = 1;
-          }
-        }
         if (scare) {
           const dx = b.x - scare.x,
             dy = b.y - scare.y,
@@ -302,7 +277,7 @@ export class Murmuration {
           }
         }
         const fm = Math.hypot(fx, fy);
-        const lim = alarmed || urgent ? maxF * 4 : maxF;
+        const lim = alarmed ? maxF * 4 : maxF;
         if (fm > lim) {
           fx = (fx / fm) * lim;
           fy = (fy / fm) * lim;
@@ -330,17 +305,6 @@ export class Murmuration {
         }
         b.x += b.vx * fraction;
         b.y += b.vy * fraction;
-        // hard push out of obstacles
-        for (const ob of obstacles) {
-          const dx = b.x - ob.x,
-            dy = b.y - ob.y,
-            d = Math.hypot(dx, dy);
-          if (d < ob.r + 2) {
-            const k = (ob.r + 2) / (d || 1);
-            b.x = ob.x + dx * k;
-            b.y = ob.y + dy * k;
-          }
-        }
         if (b.x < -20) b.x = W + 20;
         else if (b.x > W + 20) b.x = -20;
         if (b.y < -20) b.y = -19;
@@ -373,15 +337,6 @@ export class Murmuration {
         hawk.vx += (dx / d) * 0.18 * fraction;
         hawk.vy += (dy / d) * 0.18 * fraction;
       }
-      for (const ob of obstacles) {
-        const dx = hawk.x - ob.x,
-          dy = hawk.y - ob.y,
-          d = Math.hypot(dx, dy) || 1;
-        if (d < ob.r + 40) {
-          hawk.vx += (dx / d) * 0.4 * fraction;
-          hawk.vy += (dy / d) * 0.4 * fraction;
-        }
-      }
       const s = Math.hypot(hawk.vx, hawk.vy),
         cap = P.spd * 1.25;
       if (s > cap) {
@@ -395,7 +350,6 @@ export class Murmuration {
     this.step = step;
     this.view = () => ({
       birds,
-      obstacles,
       scare,
       hawk: state.hawk ? hawk : null,
     });
@@ -455,18 +409,6 @@ export class Murmuration {
       validatePoint(x, y);
       scare = { x, y, k: 1 };
     };
-    this.toggleObstacle = (x, y) => {
-      validatePoint(x, y);
-      const hit = obstacles.findIndex(
-        (ob) => Math.hypot(ob.x - x, ob.y - y) < ob.r,
-      );
-      if (hit >= 0) obstacles.splice(hit, 1);
-      else if (obstacles.length < 20)
-        obstacles.push({ x, y, r: 26 + random() * 22 });
-    };
-    this.clearObstacles = () => {
-      obstacles = [];
-    };
     syncCounts();
   }
 
@@ -475,7 +417,6 @@ export class Murmuration {
     const view = this.view();
     return {
       birds: view.birds.map((b) => ({ ...b })),
-      obstacles: view.obstacles.map((o) => ({ ...o })),
       scare: view.scare ? { ...view.scare } : null,
       hawk: view.hawk ? { ...view.hawk } : null,
     };

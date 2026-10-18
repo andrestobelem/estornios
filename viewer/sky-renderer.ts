@@ -54,7 +54,7 @@ export class SkyRenderer {
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
     };
-    const { birds, obstacles, scare, hawk: activeHawk } = scene.view();
+    const { birds, scare, hawk: activeHawk } = scene.view();
     const state = {
       trails: trails && !paused && !this.fresh,
       hawk: !!activeHawk,
@@ -96,15 +96,6 @@ export class SkyRenderer {
     function draw() {
       if (state.trails && !reduce) paintSky(1 - Math.pow(0.72, elapsed * 60));
       else paintSky(1);
-      for (const ob of obstacles) {
-        ctx.fillStyle = "#1a1420";
-        ctx.beginPath();
-        ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(242,181,107,0.55)";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-      }
       for (let sp = 0; sp < 3; sp++) drawBirds(sp);
       if (state.hawk) {
         const s = Math.hypot(hawk.vx, hawk.vy) || 1,
